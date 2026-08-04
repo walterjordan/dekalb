@@ -1,0 +1,34 @@
+@import 'tailwindcss';
+
+/* Dekalb Arts Academy — white, maroon, grey. One semantic family for status
+   (green/amber/red) kept separate from the brand maroon so alerts never read
+   as branding. */
+@theme {
+  --color-maroon: #7b1e2b;
+  --color-maroon-dark: #5c1620;
+  --color-maroon-light: #99303d;
+  --color-paper: #fbf9f7;
+  --color-sunk: #f3eeed;
+  --color-inkline: #e5dddc;
+  --color-good: #14724f;
+  --color-good-bg: #e0f0e9;
+  --color-warn: #a8690a;
+  --color-warn-bg: #fbf1df;
+  --color-crit: #c0271f;
+  --color-crit-bg: #fbe7e5;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Kiosk surfaces run fullscreen with big touch targets. */
+.kiosk-tap {
+  min-height: 64px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
