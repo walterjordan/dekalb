@@ -33,7 +33,7 @@ async function requestLink(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { sent?: string };
+  searchParams: { sent?: string; expired?: string };
 }) {
   const tenant = await requireTenant().catch(() => null);
   return (
@@ -54,6 +54,12 @@ export default async function LoginPage({
         }}
         className="rounded-xl border border-inkline bg-white p-6 shadow-sm"
       >
+        {searchParams.expired ? (
+          <p className="mb-4 rounded-md bg-crit-bg px-4 py-3 text-sm text-crit">
+            That sign-in link is expired or was already replaced. Enter your email below and we
+            will text you a fresh one.
+          </p>
+        ) : null}
         {searchParams.sent ? (
           <p className="mb-4 rounded-md bg-good-bg px-4 py-3 text-sm text-good">
             If that email is on file, a sign-in link was just texted to the phone number we have
