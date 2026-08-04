@@ -48,7 +48,7 @@ export default async function DevicesPage({ searchParams }: { searchParams: { mi
               return (
                 <tr key={d.id} className="border-b border-inkline last:border-b-0">
                   <td className="px-4 py-2 font-semibold">{d.label}</td>
-                  <td className="px-4 py-2 text-neutral-500">{d.location || '—'}</td>
+                  <td className="px-4 py-2 text-neutral-500">{d.location || '-'}</td>
                   <td className="px-4 py-2 font-mono text-xs">
                     {d.lastSeenAt ? timeLabel(d.lastSeenAt, tenant.timezone) : 'never'}
                   </td>

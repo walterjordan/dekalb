@@ -57,7 +57,7 @@ export default async function LettersPage({ searchParams }: { searchParams: { pr
               </div>
               <div>
                 <h2 className="font-serif text-xl font-semibold">{tenant.name}</h2>
-                <p className="text-sm text-neutral-500">Student pickup — your family&apos;s codes</p>
+                <p className="text-sm text-neutral-500">Student pickup - your family&apos;s codes</p>
               </div>
             </div>
             <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
@@ -68,7 +68,7 @@ export default async function LettersPage({ searchParams }: { searchParams: { pr
                 <p className="mt-3 max-w-prose text-sm leading-relaxed text-neutral-700">
                   We now use a digital pickup system for {l.students}. At pickup, scan the code on
                   this letter (or from your personal link below) at the front-door iPad, or type
-                  your family PIN. A staff member always hands your child over in person — the code
+                  your family PIN. A staff member always hands your child over in person - the code
                   only tells us you have arrived.
                 </p>
                 <div className="mt-5 flex items-center gap-4">
@@ -83,7 +83,7 @@ export default async function LettersPage({ searchParams }: { searchParams: { pr
                     </p>
                   ) : (
                     <p className="max-w-56 text-xs text-crit">
-                      No guardian on file yet — add one in Families to give this household a parent link.
+                      No guardian on file yet - add one in Families to give this household a parent link.
                     </p>
                   )}
                 </div>

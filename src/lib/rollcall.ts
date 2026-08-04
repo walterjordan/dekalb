@@ -73,7 +73,7 @@ export async function markStudent(
     const name = `${student.firstName} ${student.lastName}`;
 
     if (mark === 'CHECK_IN') {
-      if (existing && existing.status !== 'ABSENT') return; // already in — idempotent
+      if (existing && existing.status !== 'ABSENT') return; // already in - idempotent
       if (existing) {
         await tx.attendanceRecord.update({
           where: { id: existing.id },
@@ -114,7 +114,7 @@ export async function markStudent(
         detail: `${name} marked absent.`,
       });
     } else {
-      // UNDO — only while nothing downstream depends on the row.
+      // UNDO - only while nothing downstream depends on the row.
       if (!existing) return;
       if (existing.status === 'RELEASED' || existing.status === 'RELEASED_LATE') {
         throw new Error('Cannot undo after release');

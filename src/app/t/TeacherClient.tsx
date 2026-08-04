@@ -1,6 +1,6 @@
 'use client';
 // The walkie-talkie replacement. A pickup for this teacher's grade lights up
-// here (they also get a text). One tap — "Sending them now" — moves the child
+// here (they also get a text). One tap - "Sending them now" - moves the child
 // to EN ROUTE on the release desk board, so the desk gets an answer instead of
 // asking again over the radio.
 import { useCallback, useEffect, useState } from 'react';

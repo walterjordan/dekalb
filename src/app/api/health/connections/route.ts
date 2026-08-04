@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   if (tenantOk) {
     const tenant = (await getTenant())!;
 
-    // 2. Kiosk devices — quiet device during program hours is a real outage.
+    // 2. Kiosk devices - quiet device during program hours is a real outage.
     const devices = await prisma.device.findMany({ where: { tenantId: tenant.id, status: 'active', kind: 'KIOSK' } });
     const staleMs = 15 * 60_000;
     const quiet = devices.filter((d) => !d.lastSeenAt || Date.now() - d.lastSeenAt.getTime() > staleMs);
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         : `${devices.length - quiet.length}/${devices.length} seen in the last 15 min`,
     });
 
-    // 3. SMS canary — the TextLink silent-failure detector.
+    // 3. SMS canary - the TextLink silent-failure detector.
     const canary = await prisma.messageOutbox.findFirst({
       where: { tenantId: tenant.id, kind: 'CANARY' },
       orderBy: { createdAt: 'desc' },
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
         : `last canary ${canary.status.toLowerCase()} ${Math.round(canaryAge / 3600_000)}h ago`,
     });
 
-    // 4. Outbox backlog — queued safety messages that are not moving.
+    // 4. Outbox backlog - queued safety messages that are not moving.
     const stuck = await prisma.messageOutbox.count({
       where: { tenantId: tenant.id, status: 'QUEUED', createdAt: { lt: new Date(Date.now() - 10 * 60_000) } },
     });

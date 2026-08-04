@@ -35,7 +35,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: { n
         <h2 className="text-sm font-semibold">Add a student</h2>
         {households.length === 0 ? (
           <p className="mt-2 text-sm text-neutral-500">
-            Create the <a href="/admin/families?new=1" className="text-maroon underline">family</a> first — every student belongs to one.
+            Create the <a href="/admin/families?new=1" className="text-maroon underline">family</a> first - every student belongs to one.
           </p>
         ) : (
           <form action={saveStudent} className="mt-3 grid gap-3 sm:grid-cols-6">
@@ -75,9 +75,9 @@ export default async function StudentsPage({ searchParams }: { searchParams: { n
                 <td className="px-4 py-2 font-mono text-xs">{st.grade}</td>
                 <td className="px-4 py-2">{st.household.name}</td>
                 <td className="px-4 py-2 text-neutral-500">
-                  {st.household.guardians[0] ? `${st.household.guardians[0].firstName} ${st.household.guardians[0].lastName}` : '—'}
+                  {st.household.guardians[0] ? `${st.household.guardians[0].firstName} ${st.household.guardians[0].lastName}` : '-'}
                 </td>
-                <td className="px-4 py-2 font-mono text-xs text-neutral-500">{st.classGroup?.room || '—'}</td>
+                <td className="px-4 py-2 font-mono text-xs text-neutral-500">{st.classGroup?.room || '-'}</td>
                 <td className="px-4 py-2 text-right">
                   <form action={deactivateStudent} className="inline">
                     <input type="hidden" name="id" value={st.id} />

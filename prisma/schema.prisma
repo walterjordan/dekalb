@@ -86,6 +86,13 @@ model StaffUser {
   active   Boolean @default(true)
   photoUrl String?
 
+  // Sign-in methods. SMS magic link works with just a phone; password login
+  // needs passwordHash (set via emailed link = email verification, or typed by
+  // an admin); Google sign-in matches by email and records the Google sub.
+  passwordHash    String?
+  emailVerifiedAt DateTime?
+  googleSub       String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -236,6 +243,21 @@ model PickupRestriction {
 
   @@index([tenantId, active])
   @@index([studentId])
+}
+
+// Cross-device sign-in: the computer creates a ticket and polls it; tapping the
+// texted link on the phone approves it; the computer then gets its own session.
+model LoginTicket {
+  id         String    @id @default(cuid())
+  tenantId   String
+  secretHash String
+  staffId    String? // null when the email was unknown (keeps the form's answer neutral)
+  status     String    @default("PENDING") // PENDING | APPROVED | USED | EXPIRED
+  expiresAt  DateTime
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([status, expiresAt])
 }
 
 // ---------------------------------------------------------------------------

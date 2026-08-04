@@ -140,7 +140,7 @@ export default function BoardClient() {
         </span>
         {stale && (
           <span className="rounded-full bg-crit-bg px-3 py-0.5 font-mono text-xs font-semibold text-crit">
-            OFFLINE — showing last known
+            OFFLINE - showing last known
           </span>
         )}
         <Link href="/" className="ml-auto text-sm text-maroon">
@@ -169,7 +169,7 @@ export default function BoardClient() {
           <div className="font-mono text-[11px] tracking-widest">RESTRICTION ON FILE</div>
           {restricted.map((r) => (
             <div key={r.itemId} className="mt-1 text-sm opacity-90">
-              {r.name}, Grade {r.grade} — do not release. Take to the front office.
+              {r.name}, Grade {r.grade} - do not release. Take to the front office.
             </div>
           ))}
         </div>
@@ -259,7 +259,7 @@ function BoardRow({
       </div>
       {row.approvalNote && <div className="mt-1.5 text-xs text-good">{row.approvalNote}</div>}
       {row.parentText === 'FAILED' && (
-        <div className="mt-1.5 text-xs font-semibold text-crit">Parent text NOT delivered — call the guardian.</div>
+        <div className="mt-1.5 text-xs font-semibold text-crit">Parent text NOT delivered - call the guardian.</div>
       )}
       {row.restricted && (
         <div className="mt-1.5 text-xs font-semibold text-crit">Restriction on file. Reason withheld from floor staff by design.</div>
@@ -331,13 +331,13 @@ function HoldResolve({
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <h1 className="font-serif text-2xl font-semibold">{row.restricted ? 'Front office' : 'Held pickup'}</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        {row.restricted ? 'Restriction on file — front office only' : 'Adult not on the approved list'}
+        {row.restricted ? 'Restriction on file - front office only' : 'Adult not on the approved list'}
       </p>
       <div className="mt-5 grid gap-3 rounded-xl border border-inkline bg-sunk p-4">
         <Field k="Student" v={`${row.name}, Grade ${row.grade}`} />
         <Field k="Adult" v={row.requester} />
         <Field k="Requested" v={`${row.requestedAt} · via kiosk`} />
-        {!row.restricted && <Field k="Parent" v={row.approvalState === 'PENDING' ? 'Asked to confirm by text' : row.approvalNote || '—'} />}
+        {!row.restricted && <Field k="Parent" v={row.approvalState === 'PENDING' ? 'Asked to confirm by text' : row.approvalNote || '-'} />}
       </div>
       {row.restricted ? (
         <p className="mt-3 rounded-md bg-crit-bg px-3 py-2 text-sm text-crit">

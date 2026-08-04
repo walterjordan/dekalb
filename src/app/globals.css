@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Dekalb Arts Academy — white, maroon, grey. One semantic family for status
+/* Dekalb Arts Academy - white, maroon, grey. One semantic family for status
    (green/amber/red) kept separate from the brand maroon so alerts never read
    as branding. */
 @theme {

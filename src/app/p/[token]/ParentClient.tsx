@@ -66,7 +66,7 @@ export default function ParentClient({
         onClick={imHere}
         className="kiosk-tap w-full rounded-xl bg-maroon py-4 text-lg font-bold text-white disabled:opacity-40"
       >
-        {busy ? 'Sending…' : "I'm here — request pickup"}
+        {busy ? 'Sending…' : "I'm here - request pickup"}
       </button>
       {!eligible.length && !msg ? (
         <p className="mt-2 text-center text-xs text-neutral-400">

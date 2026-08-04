@@ -3,7 +3,7 @@ import { requireTenant } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
 
-// Public announcement page — the link inside the SMS. Contains only what the
+// Public announcement page - the link inside the SMS. Contains only what the
 // admin wrote for families; never student data.
 export default async function AnnouncementPage({ params }: { params: { id: string } }) {
   const tenant = await requireTenant().catch(() => null);

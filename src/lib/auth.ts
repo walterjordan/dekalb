@@ -12,7 +12,7 @@ const COOKIE = 'dismissal_session';
 function secret(): Uint8Array {
   const s = process.env.SESSION_SECRET;
   if (!s) throw new Error('SESSION_SECRET is not set');
-  // Do NOT trim — see the jab-ops SESSION_SECRET trailing-CR incident. Use the
+  // Do NOT trim - see the jab-ops SESSION_SECRET trailing-CR incident. Use the
   // raw value byte-for-byte so a secret with trailing whitespace still verifies
   // consistently everywhere it is read.
   return new TextEncoder().encode(s);
@@ -33,10 +33,59 @@ export interface StaffSession {
   role: string;
 }
 
-// ---- magic link (login) ----
+// ---- magic link (login), with cross-device ticket approval ----
+// The device that ASKS for the link (often a computer or the front-desk iPad)
+// creates a LoginTicket and polls it. The texted link carries the ticket id;
+// tapping it on the phone signs the phone in AND approves the ticket, so the
+// asking device continues right where it was.
 
-export async function mintLoginLink(staff: StaffUser, baseUrl: string): Promise<string> {
-  const jwt = await new SignJWT({ purpose: 'staff_signin', staffId: staff.id })
+const TICKET_COOKIE = 'dismissal_ticket';
+export const TICKET_TTL_MS = 10 * 60_000;
+
+export async function createLoginTicket(tenantId: string, staffId: string | null): Promise<string> {
+  const ticketSecret = newToken();
+  const ticket = await prisma.loginTicket.create({
+    data: {
+      tenantId,
+      staffId,
+      secretHash: sha256(ticketSecret),
+      expiresAt: new Date(Date.now() + TICKET_TTL_MS),
+    },
+  });
+  cookies().set(TICKET_COOKIE, `${ticket.id}.${ticketSecret}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: TICKET_TTL_MS / 1000,
+    path: '/',
+  });
+  return ticket.id;
+}
+
+/** If this device's ticket is approved, sign the device in. Single use. */
+export async function claimLoginTicket(): Promise<StaffUser | 'pending' | null> {
+  const raw = cookies().get(TICKET_COOKIE)?.value || '';
+  const [id, ticketSecret] = raw.split('.');
+  if (!id || !ticketSecret) return null;
+  const ticket = await prisma.loginTicket.findUnique({ where: { id } });
+  if (!ticket || ticket.secretHash !== sha256(ticketSecret)) return null;
+  if (ticket.expiresAt < new Date() || ticket.status === 'USED' || ticket.status === 'EXPIRED') return null;
+  if (ticket.status === 'PENDING') return 'pending';
+  // APPROVED - claim it exactly once.
+  const claimed = await prisma.loginTicket.updateMany({
+    where: { id, status: 'APPROVED' },
+    data: { status: 'USED' },
+  });
+  if (!claimed.count || !ticket.staffId) return null;
+  const staff = await prisma.staffUser.findUnique({ where: { id: ticket.staffId } });
+  if (!staff || !staff.active) return null;
+  await createSession(staff);
+  cookies().delete(TICKET_COOKIE);
+  return staff;
+}
+
+export async function mintLoginLink(staff: StaffUser, baseUrl: string, ticketId?: string): Promise<string> {
+  const jwt = await new SignJWT({ purpose: 'staff_signin', staffId: staff.id, ticketId: ticketId || null })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('30m')
@@ -48,6 +97,35 @@ export async function consumeLoginToken(token: string): Promise<StaffUser | null
   try {
     const { payload } = await jwtVerify(token, secret());
     if (payload.purpose !== 'staff_signin' || typeof payload.staffId !== 'string') return null;
+    const staff = await prisma.staffUser.findUnique({ where: { id: payload.staffId } });
+    if (!staff || !staff.active) return null;
+    // Approve the waiting device's ticket, if the link carried one.
+    if (typeof payload.ticketId === 'string' && payload.ticketId) {
+      await prisma.loginTicket.updateMany({
+        where: { id: payload.ticketId, status: 'PENDING', expiresAt: { gt: new Date() }, staffId: staff.id },
+        data: { status: 'APPROVED', approvedAt: new Date() },
+      });
+    }
+    return staff;
+  } catch {
+    return null;
+  }
+}
+
+// ---- password set / reset links (emailed; consuming one proves the mailbox) ----
+
+export async function mintPasswordResetToken(staff: StaffUser): Promise<string> {
+  return new SignJWT({ purpose: 'staff_pw_reset', staffId: staff.id })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('60m')
+    .sign(secret());
+}
+
+export async function consumePasswordResetToken(token: string): Promise<StaffUser | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret());
+    if (payload.purpose !== 'staff_pw_reset' || typeof payload.staffId !== 'string') return null;
     const staff = await prisma.staffUser.findUnique({ where: { id: payload.staffId } });
     return staff && staff.active ? staff : null;
   } catch {
@@ -114,7 +192,7 @@ export async function deviceByToken(token: string): Promise<Device | null> {
   if (!token) return null;
   const d = await prisma.device.findUnique({ where: { tokenHash: sha256(token) } });
   if (!d || d.status !== 'active') return null;
-  // Heartbeat — this is what feeds uptime monitoring.
+  // Heartbeat - this is what feeds uptime monitoring.
   prisma.device
     .update({ where: { id: d.id }, data: { lastSeenAt: new Date() } })
     .catch(() => undefined);

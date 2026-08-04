@@ -51,7 +51,7 @@ export default async function ClassesPage() {
                 </td>
               </tr>
             ))}
-            {groups.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-400">No classes yet — they appear when students are added.</td></tr>}
+            {groups.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-400">No classes yet - they appear when students are added.</td></tr>}
           </tbody>
         </table>
       </section>

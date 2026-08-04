@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireTenant } from '@/lib/tenant';
 import { GRADES } from '@/lib/rollcall';
-import { saveStaff, deactivateStaff } from '../actions';
+import { saveStaff, deactivateStaff, setStaffPassword } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +41,7 @@ export default async function StaffPage() {
           <button className="rounded-md bg-maroon px-4 py-2 text-sm font-semibold text-white">Add</button>
         </form>
         <p className="mt-2 text-xs text-neutral-400">
-          A teacher&apos;s mobile number is where pickup alerts go. That is the walkie-talkie replacement — set it.
+          A teacher&apos;s mobile number is where pickup alerts go. That is the walkie-talkie replacement - set it.
         </p>
       </section>
 
@@ -59,15 +59,31 @@ export default async function StaffPage() {
                 <td className="px-4 py-2 font-semibold">{p.name}</td>
                 <td className="px-4 py-2 text-neutral-500">{p.role.toLowerCase()}</td>
                 <td className="px-4 py-2 font-mono text-xs">
-                  {p.classGroups.map((g) => `${g.grade}${g.room ? ` · ${g.room}` : ''}`).join(', ') || '—'}
+                  {p.classGroups.map((g) => `${g.grade}${g.room ? ` · ${g.room}` : ''}`).join(', ') || '-'}
                 </td>
                 <td className="px-4 py-2 font-mono text-xs">{p.phone || <span className="text-crit">missing</span>}</td>
-                <td className="px-4 py-2 text-xs text-neutral-500">{p.email || '—'}</td>
+                <td className="px-4 py-2 text-xs text-neutral-500">{p.email || '-'}</td>
                 <td className="px-4 py-2 text-right">
-                  <form action={deactivateStaff} className="inline">
-                    <input type="hidden" name="id" value={p.id} />
-                    <button className="text-xs text-neutral-400 hover:text-crit">remove</button>
-                  </form>
+                  <div className="flex items-center justify-end gap-2">
+                    <form action={setStaffPassword} className="flex items-center gap-1">
+                      <input type="hidden" name="id" value={p.id} />
+                      <input
+                        name="password"
+                        type="text"
+                        minLength={8}
+                        placeholder="temp password"
+                        title={p.passwordHash ? 'Replaces their current password' : 'No password set yet'}
+                        className="w-28 rounded-md border border-inkline px-2 py-1 text-xs"
+                      />
+                      <button className="rounded-md border border-inkline px-2 py-1 text-xs font-semibold hover:border-maroon">
+                        set
+                      </button>
+                    </form>
+                    <form action={deactivateStaff} className="inline">
+                      <input type="hidden" name="id" value={p.id} />
+                      <button className="text-xs text-neutral-400 hover:text-crit">remove</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

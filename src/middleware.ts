@@ -10,6 +10,7 @@ const PUBLIC_PREFIXES = [
   '/approve', // single-use approval links
   '/a', // published announcements
   '/login',
+  '/api/auth', // sign-in endpoints: ticket polling + Google credential check
   '/api/kiosk',
   '/api/parent',
   '/api/approve',

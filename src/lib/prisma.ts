@@ -1,5 +1,5 @@
 // Global Prisma singleton. Never instantiate PrismaClient in a route, never
-// $disconnect() in a finally — both destroy the pool on serverless.
+// $disconnect() in a finally - both destroy the pool on serverless.
 import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

@@ -15,7 +15,7 @@ type Tx = Prisma.TransactionClient;
 const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 // ---------------------------------------------------------------------------
-// Lookup — privacy masking is done HERE, server-side, so the network response
+// Lookup - privacy masking is done HERE, server-side, so the network response
 // itself never carries names or full numbers before confirmation.
 // ---------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ export async function lookupHousehold(tenant: Tenant, query: string): Promise<Ma
   });
 }
 
-/** Full household detail — only after the guardian confirmed the masked match. */
+/** Full household detail - only after the guardian confirmed the masked match. */
 export async function householdDetail(tenant: Tenant, householdId: string) {
   const date = todayInTz(tenant.timezone);
   const h = await prisma.household.findFirst({
@@ -290,7 +290,7 @@ export async function createPickupRequest(input: CreateRequestInput): Promise<Cr
       return { requestId: request.id, status: 'NEEDS_APPROVAL' as const, reason: 'UNAPPROVED_ADULT' as const };
     }
 
-    // Known adult — normal path. Teacher alerts, one per class group.
+    // Known adult - normal path. Teacher alerts, one per class group.
     await audit(tx, {
       tenantId: tenant.id,
       actorKind: guardian ? 'GUARDIAN' : 'DEVICE',

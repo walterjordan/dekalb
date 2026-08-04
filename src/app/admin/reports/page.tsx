@@ -60,7 +60,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: { da
       </div>
       {failed > 0 && (
         <p className="mt-3 rounded-md bg-crit-bg px-4 py-2.5 text-sm font-semibold text-crit">
-          {failed} text message{failed === 1 ? '' : 's'} permanently failed to send. Those guardians may not have been notified — check the ledger.
+          {failed} text message{failed === 1 ? '' : 's'} permanently failed to send. Those guardians may not have been notified - check the ledger.
         </p>
       )}
 
@@ -79,11 +79,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: { da
                 <td className="px-4 py-2 font-semibold">{r.student.firstName} {r.student.lastName}{r.reversed ? ' ↩' : ''}</td>
                 <td className="px-4 py-2 font-mono text-xs">{r.student.grade}</td>
                 <td className="px-4 py-2 font-mono text-xs">{r.status === 'ABSENT' ? 'absent' : timeLabel(r.checkInAt, tenant.timezone)}</td>
-                <td className="px-4 py-2 font-mono text-xs">{timeLabel(r.checkOutAt, tenant.timezone) || '—'}</td>
-                <td className="px-4 py-2">{r.releasedToName || '—'}</td>
-                <td className="px-4 py-2 text-neutral-500">{r.releasedByName || '—'}</td>
+                <td className="px-4 py-2 font-mono text-xs">{timeLabel(r.checkOutAt, tenant.timezone) || '-'}</td>
+                <td className="px-4 py-2">{r.releasedToName || '-'}</td>
+                <td className="px-4 py-2 text-neutral-500">{r.releasedByName || '-'}</td>
                 <td className="px-4 py-2 font-mono text-xs">
-                  {r.lateMinutes > 0 ? <span className="font-bold text-warn">{r.lateMinutes}m · ${(r.lateFeeCents / 100).toFixed(2)}</span> : '—'}
+                  {r.lateMinutes > 0 ? <span className="font-bold text-warn">{r.lateMinutes}m · ${(r.lateFeeCents / 100).toFixed(2)}</span> : '-'}
                 </td>
               </tr>
             ))}

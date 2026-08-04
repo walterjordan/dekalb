@@ -129,7 +129,7 @@ export default async function ImportPage({
       <p className="mt-1 max-w-prose text-sm text-neutral-500">
         Paste rows from Excel or Google Sheets. Columns in order:{' '}
         <span className="font-mono text-xs">student first, student last, grade (K-8), family name, parent first, parent last, parent phone</span>.
-        Family name and parent columns are optional — students with the same family name share one PIN.
+        Family name and parent columns are optional - students with the same family name share one PIN.
       </p>
 
       {searchParams.done ? (
@@ -138,7 +138,7 @@ export default async function ImportPage({
         </p>
       ) : null}
       {searchParams.err ? (
-        <p className="mt-4 rounded-md bg-crit-bg px-4 py-3 text-sm text-crit">Nothing valid to import — check the column order.</p>
+        <p className="mt-4 rounded-md bg-crit-bg px-4 py-3 text-sm text-crit">Nothing valid to import - check the column order.</p>
       ) : null}
 
       <form action={runImport} className="mt-5">

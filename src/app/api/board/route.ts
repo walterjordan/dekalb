@@ -6,7 +6,7 @@ import { todayInTz, timeLabel } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
-// The release board feed. Restriction DETAIL never leaves this endpoint —
+// The release board feed. Restriction DETAIL never leaves this endpoint -
 // floor staff get a boolean and a routing instruction only.
 export async function GET() {
   try {

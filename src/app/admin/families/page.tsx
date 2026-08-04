@@ -145,7 +145,7 @@ export default async function FamiliesPage({ searchParams }: { searchParams: { f
                   <input type="hidden" name="householdId" value={h.id} />
                   <input name="restrictedName" required placeholder="Restricted person's name" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
                   <input name="sourceNote" placeholder="Source (e.g. custody order on file)" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
-                  <input name="staffOnlyDetail" placeholder="Detail — visible to front office only" className="rounded-md border border-inkline px-2 py-1.5 text-sm sm:col-span-2" />
+                  <input name="staffOnlyDetail" placeholder="Detail - visible to front office only" className="rounded-md border border-inkline px-2 py-1.5 text-sm sm:col-span-2" />
                   <button className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-white sm:col-start-2">+ Restriction</button>
                 </form>
                 <p className="mt-2 text-xs text-neutral-400">

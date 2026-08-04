@@ -1,5 +1,5 @@
 // Seed: tenant + Walter as admin + synthetic K-8 demo data (safe to re-run).
-// Real Dekalb data replaces the synthetic families via /admin/import later —
+// Real Dekalb data replaces the synthetic families via /admin/import later -
 // synthetic rows are all flagged with notes:'demo-seed' for easy cleanup.
 import { PrismaClient } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
@@ -44,7 +44,7 @@ async function main() {
   console.log('admin', walter.name);
 
   if (process.env.SEED_DEMO !== '1') {
-    console.log('SEED_DEMO != 1 — skipping synthetic data.');
+    console.log('SEED_DEMO != 1 - skipping synthetic data.');
     return;
   }
 
@@ -78,7 +78,7 @@ async function main() {
   // 25 households, 40 students.
   const existing = await prisma.student.count({ where: { tenantId: tenant.id } });
   if (existing > 0) {
-    console.log(`students already present (${existing}) — skipping synthetic families.`);
+    console.log(`students already present (${existing}) - skipping synthetic families.`);
     return;
   }
 
@@ -148,7 +148,7 @@ async function main() {
         studentId: first.students[0]?.id || null,
         restrictedName: 'Marcus Webb',
         sourceNote: 'Custody order on file (demo)',
-        staffOnlyDetail: 'Demo restriction — front office only.',
+        staffOnlyDetail: 'Demo restriction - front office only.',
         reviewedBy: 'seed',
         reviewedAt: new Date(),
       },

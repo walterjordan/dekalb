@@ -33,7 +33,7 @@ export default async function LedgerPage({ searchParams }: { searchParams: { pag
       </div>
       {broken !== undefined && (
         <p className={`mt-3 rounded-md px-4 py-2.5 text-sm font-semibold ${broken === null ? 'bg-good-bg text-good' : 'bg-crit-bg text-crit'}`}>
-          {broken === null ? `Chain intact — every one of the ${total} entries verifies.` : `CHAIN BROKEN at entry ${broken}. Records were altered outside the application.`}
+          {broken === null ? `Chain intact - every one of the ${total} entries verifies.` : `CHAIN BROKEN at entry ${broken}. Records were altered outside the application.`}
         </p>
       )}
       <section className="mt-4 overflow-x-auto rounded-xl border border-inkline bg-white shadow-sm">

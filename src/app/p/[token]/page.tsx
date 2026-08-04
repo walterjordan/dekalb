@@ -6,7 +6,7 @@ import ParentClient from './ParentClient';
 
 export const dynamic = 'force-dynamic';
 
-// The parent's page. No login — the opaque token in the URL is the credential,
+// The parent's page. No login - the opaque token in the URL is the credential,
 // scoped to one guardian. It shows the family QR (which the kiosk scans),
 // today's status per child, and the "I'm here" carline button.
 export default async function ParentPage({ params }: { params: { token: string } }) {
@@ -70,7 +70,7 @@ export default async function ParentPage({ params }: { params: { token: string }
           grade: s.grade,
           status: open
             ? open.status === 'READY'
-              ? 'READY — at the door'
+              ? 'READY - at the door'
               : open.status === 'NEEDS_APPROVAL'
                 ? 'Waiting on approval'
                 : 'Pickup in progress'

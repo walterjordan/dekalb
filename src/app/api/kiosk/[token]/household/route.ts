@@ -5,7 +5,7 @@ import { householdDetail } from '@/lib/pickup';
 
 export const dynamic = 'force-dynamic';
 
-// Full household detail — the step AFTER the masked confirmation.
+// Full household detail - the step AFTER the masked confirmation.
 export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
   const device = await deviceByToken(params.token);
   if (!device) return NextResponse.json({ error: 'Kiosk not available' }, { status: 403 });

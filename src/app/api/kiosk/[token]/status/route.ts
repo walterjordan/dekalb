@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-// Polled by the kiosk hold/sent screens. Returns only per-child ladder states —
+// Polled by the kiosk hold/sent screens. Returns only per-child ladder states -
 // no names beyond what the kiosk already showed, and never restriction detail.
 export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
   const device = await deviceByToken(params.token);

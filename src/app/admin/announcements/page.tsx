@@ -95,14 +95,14 @@ export default async function AnnouncementsPage() {
     <main className="max-w-3xl">
       <h1 className="font-serif text-xl font-semibold">Announcements</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        The text carries a short summary plus a link to the full announcement — never the whole
+        The text carries a short summary plus a link to the full announcement - never the whole
         thing. One text per family, to the primary contact. Email channel comes in a later phase.
       </p>
 
       <form action={sendAnnouncement} className="mt-4 grid gap-3 rounded-xl border border-inkline bg-white p-4 shadow-sm">
         <input name="title" required placeholder="Title (e.g. Spring recital call times)" className="rounded-md border border-inkline px-3 py-2 text-sm font-semibold" />
-        <textarea name="body" required rows={4} placeholder="Full announcement — this is what the link opens." className="rounded-md border border-inkline px-3 py-2 text-sm" />
-        <input name="smsBody" maxLength={120} placeholder="Short text version (optional — defaults to the title)" className="rounded-md border border-inkline px-3 py-2 text-sm" />
+        <textarea name="body" required rows={4} placeholder="Full announcement - this is what the link opens." className="rounded-md border border-inkline px-3 py-2 text-sm" />
+        <input name="smsBody" maxLength={120} placeholder="Short text version (optional - defaults to the title)" className="rounded-md border border-inkline px-3 py-2 text-sm" />
         <div className="flex flex-wrap items-center gap-3">
           <select name="audienceKind" className="rounded-md border border-inkline px-3 py-2 text-sm">
             <option value="ALL">All families</option>

@@ -1,5 +1,5 @@
 'use client';
-// The parent-facing kiosk (iPad, fullscreen). Pickup ONLY — arrival is staff
+// The parent-facing kiosk (iPad, fullscreen). Pickup ONLY - arrival is staff
 // roll call. Steps: home -> scan|pin|search -> masked confirm -> select
 // students + who is picking up -> sent/hold. Auto-resets for the next family.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -287,7 +287,7 @@ export default function KioskClient({
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-good-bg text-3xl text-good">✓</div>
             <h1 className="mt-4 font-serif text-2xl font-semibold">Request sent to the release desk.</h1>
             <p className="mt-2 text-neutral-600">
-              {step.names} — we will text you when they are at the door. Please stay in the carline
+              {step.names} - we will text you when they are at the door. Please stay in the carline
               or wait by the entrance.
             </p>
             <p className="mt-6 text-sm font-semibold text-maroon">No child has been released yet.</p>
@@ -420,7 +420,7 @@ function ScanScreen({ onResult, onFallback, busy }: { onResult: (v: string) => v
           <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
         </div>
       )}
-      <p className="mt-3 text-sm text-neutral-500">{busy ? 'Found it — one moment…' : 'The code is on your parent page.'}</p>
+      <p className="mt-3 text-sm text-neutral-500">{busy ? 'Found it - one moment…' : 'The code is on your parent page.'}</p>
       <button onClick={onFallback} className="kiosk-tap mt-5 rounded-xl border-2 border-inkline bg-white px-6 py-3 font-semibold">
         Enter PIN instead
       </button>
@@ -580,7 +580,7 @@ function HoldScreen({
     return () => clearInterval(iv);
   }, [token, requestId]);
 
-  // RESTRICTION renders the same neutral copy as any hold — the kiosk never
+  // RESTRICTION renders the same neutral copy as any hold - the kiosk never
   // reveals that a restriction exists to the person standing in front of it.
   return (
     <div className="mx-auto w-full max-w-md text-center">

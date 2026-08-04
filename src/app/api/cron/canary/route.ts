@@ -8,7 +8,7 @@ export const maxDuration = 60;
 
 // Daily canary: sends a test SMS to CANARY_PHONE and reports whether the LAST
 // canary ever got sent. TextLink once returned success for five days with the
-// SIM powered off — the canary is how that failure mode gets caught in hours,
+// SIM powered off - the canary is how that failure mode gets caught in hours,
 // not days. jab-ops polls /api/health/connections which folds this state in.
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token') || '';
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     await enqueueSms(tx, {
       tenantId: tenant.id,
       toPhone: to,
-      body: `jab-dismissal canary ${day} — if you can read this, the SMS path works.`,
+      body: `jab-dismissal canary ${day} - if you can read this, the SMS path works.`,
       kind: 'CANARY',
       idempotencyKey: `canary:${day}`,
     });

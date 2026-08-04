@@ -241,6 +241,24 @@ export async function saveStaff(fd: FormData) {
   revalidatePath('/admin/staff');
 }
 
+// JAB-internal / admin ability: set a temporary password directly, for staff
+// who cannot receive the email or text (or at the front desk on day one).
+export async function setStaffPassword(fd: FormData) {
+  const { session, tenant } = await ctx();
+  if (session.role !== 'ADMIN') return;
+  const id = s(fd, 'id');
+  const pw = String(fd.get('password') || '');
+  const { hashPassword, passwordProblem } = await import('@/lib/password');
+  if (!id || passwordProblem(pw)) return;
+  const st = await prisma.staffUser.update({ where: { id }, data: { passwordHash: hashPassword(pw) } });
+  await auditNow({
+    tenantId: tenant.id, actorKind: 'STAFF', actorId: session.staffId, actorName: session.name,
+    action: 'PASSWORD_SET', entity: 'StaffUser', entityId: id,
+    detail: `Temporary password set for ${st.name} by ${session.name}.`,
+  });
+  revalidatePath('/admin/staff');
+}
+
 export async function deactivateStaff(fd: FormData) {
   const { tenant } = await ctx();
   void tenant;
