@@ -20,10 +20,10 @@ export default async function StudentsPage({ searchParams }: { searchParams: { n
 
   return (
     <main>
-      <div className="flex items-baseline gap-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
         <h1 className="font-serif text-xl font-semibold">Students</h1>
         <span className="font-mono text-xs text-neutral-400">{students.length} shown</span>
-        <div className="ml-auto flex gap-1">
+        <div className="ml-auto flex flex-wrap gap-1">
           <a href="/admin/students" className={`rounded px-2 py-1 font-mono text-xs ${!gradeFilter ? 'bg-maroon text-white' : 'text-neutral-500'}`}>All</a>
           {GRADES.map((g) => (
             <a key={g} href={`/admin/students?grade=${g}`} className={`rounded px-2 py-1 font-mono text-xs ${gradeFilter === g ? 'bg-maroon text-white' : 'text-neutral-500'}`}>{g}</a>

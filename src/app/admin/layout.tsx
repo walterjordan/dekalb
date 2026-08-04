@@ -26,21 +26,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen">
       <header className="border-b border-inkline bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3">
-          <Link href="/admin" className="font-serif text-lg font-semibold">
-            Dashboard
-          </Link>
-          <nav className="flex flex-wrap gap-1 text-sm">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5">
+          <div className="flex items-center justify-between pt-3">
+            <Link href="/admin" className="font-serif text-lg font-semibold">
+              Dashboard
+            </Link>
+            <span className="text-xs text-neutral-400">{session.name}</span>
+          </div>
+          {/* One line, side-scrolls on phone and iPad instead of wrapping into a block. */}
+          <nav className="-mx-4 mt-1 flex gap-1 overflow-x-auto whitespace-nowrap px-4 pb-2 text-sm sm:-mx-5 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className="rounded-md px-2.5 py-1.5 text-neutral-600 hover:bg-sunk hover:text-maroon">
+              <Link
+                key={n.href}
+                href={n.href}
+                className="flex-none rounded-md px-2.5 py-1.5 text-neutral-600 hover:bg-sunk hover:text-maroon"
+              >
                 {n.label}
               </Link>
             ))}
           </nav>
-          <span className="ml-auto text-xs text-neutral-400">{session.name}</span>
         </div>
       </header>
-      <div className="mx-auto max-w-6xl px-5 py-6">{children}</div>
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-5">{children}</div>
     </div>
   );
 }

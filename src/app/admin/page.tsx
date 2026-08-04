@@ -43,10 +43,11 @@ export default async function AdminToday() {
 
   return (
     <main>
-      <div className="flex items-baseline gap-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="font-serif text-xl font-semibold">{tenant.name}</h1>
-        <span className="font-mono text-xs text-neutral-400">{date}</span>
-        <span className="ml-auto font-mono text-xs text-neutral-400">{totalStudents} students enrolled</span>
+        <span className="whitespace-nowrap font-mono text-xs text-neutral-400">
+          {date} · {totalStudents} students enrolled
+        </span>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
