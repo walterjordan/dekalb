@@ -145,8 +145,10 @@ const NORMAL_SESSION_SECONDS = 14 * 24 * 3600;
 export async function createSession(staff: StaffUser, opts?: { shortLived?: boolean }): Promise<void> {
   // /login/kiosk drops this marker, so every sign-in method (password, Google,
   // magic link, temp password) inherits the short session without each one
-  // having to know where the sign-in started.
-  const fromKiosk = cookies().get('kiosk_origin')?.value === '1';
+  // having to know where the sign-in started. It is NOT cleared here: the same
+  // cookie tells the admin pages where to send this iPad back to when it goes
+  // idle, so it lives as long as the session it shortened.
+  const fromKiosk = Boolean(cookies().get('kiosk_return')?.value);
   const seconds = opts?.shortLived || fromKiosk ? KIOSK_SESSION_SECONDS : NORMAL_SESSION_SECONDS;
   const jwt = await new SignJWT({
     purpose: 'staff_session',
@@ -166,7 +168,6 @@ export async function createSession(staff: StaffUser, opts?: { shortLived?: bool
     maxAge: seconds,
     path: '/',
   });
-  if (fromKiosk) cookies().delete('kiosk_origin');
 }
 
 export async function getSession(): Promise<StaffSession | null> {

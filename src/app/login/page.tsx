@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { requireTenant } from '@/lib/tenant';
+import KioskReturn from '@/components/KioskReturn';
 import { prisma } from '@/lib/prisma';
 import { mintLoginLink, createSession, createLoginTicket } from '@/lib/auth';
 import { verifyPassword } from '@/lib/password';
@@ -65,9 +67,15 @@ export default async function LoginPage({
 }) {
   const tenant = await requireTenant().catch(() => null);
   const googleClientId = process.env.GOOGLE_CLIENT_ID || '';
+  // Set only when this sign-in started from the door kiosk. Signed out there
+  // is nothing to lose, so the return is silent and needs no prompt: 30s of
+  // real inactivity, reset by any tap or keystroke, so thinking time and a
+  // parent interrupting mid-password do not bounce anyone.
+  const kioskReturn = cookies().get('kiosk_return')?.value || null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
+      {kioskReturn && <KioskReturn returnTo={kioskReturn} signedIn={false} idleSeconds={30} />}
       <div className="mb-7 text-center">
         <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-maroon font-serif text-sm font-semibold text-white">
           {tenant ? tenant.name.split(' ').map((w) => w[0]).slice(0, 3).join('') : 'JAB'}

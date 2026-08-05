@@ -59,6 +59,21 @@ export default function KioskClient({
     setBusy(false);
   }, []);
 
+  // Long-press the header for staff sign-in. 2s: long enough that no parent
+  // reaches it by accident, short enough that staff never wonder if it worked.
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startHold = useCallback(() => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      window.location.href = `/login/kiosk?to=${encodeURIComponent(`/k/${token}`)}`;
+    }, 2000);
+  }, [token]);
+  const cancelHold = useCallback(() => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+  }, []);
+  useEffect(() => () => { if (holdTimer.current) clearTimeout(holdTimer.current); }, []);
+
   // Idle reset on terminal screens so the next family starts clean.
   useEffect(() => {
     if (resetTimer.current) clearTimeout(resetTimer.current);
@@ -153,7 +168,21 @@ export default function KioskClient({
 
   return (
     <main className="flex min-h-screen flex-col bg-paper">
-      <header className="flex items-center gap-3 border-b border-inkline bg-white px-5 py-3">
+      {/* Staff sign-in is a LONG PRESS on the school name, not a visible link.
+          Two reasons. A parent should never see a staff control on the pickup
+          screen at all, and a single tap on a header logo is the universal
+          "take me home" gesture, so putting the staff door there would be a
+          trapdoor under the most-tapped target on the screen. A deliberate
+          hold is effectively never accidental and is one sentence to teach.
+          This is decluttering, not a security control: the password is what
+          protects the roster. */}
+      <header
+        onPointerDown={startHold}
+        onPointerUp={cancelHold}
+        onPointerLeave={cancelHold}
+        onContextMenu={(e) => e.preventDefault()}
+        className="flex select-none items-center gap-3 border-b border-inkline bg-white px-5 py-3"
+      >
         <div className="grid h-9 w-9 place-items-center rounded-full bg-maroon font-serif text-[11px] font-bold text-white">
           {tenantName.split(' ').map((w) => w[0]).slice(0, 3).join('')}
         </div>
@@ -353,19 +382,6 @@ export default function KioskClient({
       <footer className="flex items-center gap-2 border-t border-inkline bg-white px-5 py-2 font-mono text-xs text-neutral-400">
         <span className="h-1.5 w-1.5 rounded-full bg-good" />
         {presentCount} students present · {deviceLabel} online
-        {/* Staff sign-in from the door iPad. Deliberately small and last: a
-            parent should never mistake it for one of their own options. It
-            opens in a new tab so the kiosk itself is never navigated away
-            from and stays on its device token, and goes via /login/kiosk so
-            the resulting session is short-lived on this unattended device. */}
-        <a
-          href="/login/kiosk"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-auto text-neutral-400 underline-offset-2 hover:text-maroon hover:underline"
-        >
-          Staff sign in
-        </a>
       </footer>
     </main>
   );
