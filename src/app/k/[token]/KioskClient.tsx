@@ -18,6 +18,8 @@ type Step =
   | { s: 'scan' }
   | { s: 'pin' }
   | { s: 'search' }
+  | { s: 'phone' }
+  | { s: 'linksent' }
   | { s: 'confirm'; matches: Masked[]; picked?: Masked; method: 'PIN' | 'SEARCH' }
   | { s: 'select'; household: HouseholdDetail; method: 'QR' | 'PIN' | 'SEARCH'; guardianId?: string; guardianName?: string }
   | { s: 'sent'; names: string; requestId: string }
@@ -60,7 +62,7 @@ export default function KioskClient({
   // Idle reset on terminal screens so the next family starts clean.
   useEffect(() => {
     if (resetTimer.current) clearTimeout(resetTimer.current);
-    if (step.s === 'sent' || step.s === 'error') {
+    if (step.s === 'sent' || step.s === 'error' || step.s === 'linksent') {
       resetTimer.current = setTimeout(reset, RESET_MS);
     }
     return () => {
@@ -170,11 +172,49 @@ export default function KioskClient({
           <HomeScreen
             onScan={() => setStep({ s: 'scan' })}
             onPin={() => setStep({ s: 'pin' })}
+            onPhone={() => setStep({ s: 'phone' })}
             onSearch={() => setStep({ s: 'search' })}
           />
         )}
 
         {step.s === 'scan' && <ScanScreen onResult={onScan} onFallback={() => setStep({ s: 'pin' })} busy={busy} />}
+
+        {step.s === 'phone' && (
+          <PhoneScreen
+            value={query}
+            onChange={setQuery}
+            busy={busy}
+            onSubmit={async () => {
+              setBusy(true);
+              try {
+                await api('send-link', { phone: query.trim() });
+                setStep({ s: 'linksent' });
+              } catch (e) {
+                setStep({ s: 'error', message: e instanceof Error ? e.message : 'Something went wrong.' });
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        )}
+
+        {step.s === 'linksent' && (
+          <div className="mx-auto w-full max-w-md text-center">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-good-bg text-3xl text-good">✓</div>
+            <h1 className="mt-4 font-serif text-2xl font-semibold">Check your phone.</h1>
+            <p className="mt-2 text-neutral-600">
+              If that number is on file for a family here, your pickup link is on its way. Open it
+              and tap &ldquo;I&apos;m here&rdquo;.
+            </p>
+            <p className="mt-5 text-sm text-neutral-500">
+              Nothing arrives? The school may have a different number for you. See the front desk
+              and they can check you in.
+            </p>
+            <button onClick={reset} className="kiosk-tap mt-8 rounded-xl border-2 border-inkline bg-white px-8 py-3 font-semibold">
+              Done
+            </button>
+          </div>
+        )}
 
         {(step.s === 'pin' || step.s === 'search') && (
           <div className="mx-auto w-full max-w-md">
@@ -313,29 +353,99 @@ export default function KioskClient({
       <footer className="flex items-center gap-2 border-t border-inkline bg-white px-5 py-2 font-mono text-xs text-neutral-400">
         <span className="h-1.5 w-1.5 rounded-full bg-good" />
         {presentCount} students present · {deviceLabel} online
+        {/* Staff sign-in from the door iPad. Deliberately small and last: a
+            parent should never mistake it for one of their own options. It
+            opens in a new tab so the kiosk itself is never navigated away
+            from and stays on its device token, and goes via /login/kiosk so
+            the resulting session is short-lived on this unattended device. */}
+        <a
+          href="/login/kiosk"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto text-neutral-400 underline-offset-2 hover:text-maroon hover:underline"
+        >
+          Staff sign in
+        </a>
       </footer>
     </main>
   );
 }
 
-function HomeScreen({ onScan, onPin, onSearch }: { onScan: () => void; onPin: () => void; onSearch: () => void }) {
+// Three ways in for a parent, mirroring the three ways staff can sign in.
+// Scan and PIN check a child out directly. "Text me my link" does not: it is
+// the recovery path for a parent who has neither, and it hands them the link
+// they should have had all along, so the next pickup is a scan.
+//
+// "Find my family" stays as the smaller fallback underneath ON PURPOSE. It is
+// the only route that still works when the parent has nothing at all: no
+// letter, no PIN, dead phone. It ends in a staff decision rather than a
+// credential, which is why it can be allowed to work in that state.
+function HomeScreen({
+  onScan, onPin, onPhone, onSearch,
+}: {
+  onScan: () => void; onPin: () => void; onPhone: () => void; onSearch: () => void;
+}) {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center">
-      <h1 className="text-center font-serif text-3xl font-semibold">Scan your code or enter your PIN.</h1>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2">
-        <button onClick={onScan} className="kiosk-tap rounded-2xl border-2 border-inkline bg-white px-6 py-10 text-center hover:border-maroon">
+    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center">
+      <h1 className="text-center font-serif text-3xl font-semibold">Picking up? Choose one.</h1>
+      <div className="mt-8 grid gap-5 sm:grid-cols-3">
+        <button onClick={onScan} className="kiosk-tap rounded-2xl border-2 border-inkline bg-white px-5 py-10 text-center hover:border-maroon">
           <div className="text-4xl text-maroon">▣</div>
           <div className="mt-3 text-xl font-bold">Scan my code</div>
           <div className="mt-1 text-neutral-500">Hold your phone up</div>
         </button>
-        <button onClick={onPin} className="kiosk-tap rounded-2xl border-2 border-inkline bg-white px-6 py-10 text-center hover:border-maroon">
+        <button onClick={onPin} className="kiosk-tap rounded-2xl border-2 border-inkline bg-white px-5 py-10 text-center hover:border-maroon">
           <div className="text-4xl text-maroon">⌘</div>
           <div className="mt-3 text-xl font-bold">Enter my PIN</div>
           <div className="mt-1 text-neutral-500">4-digit family code</div>
         </button>
+        <button onClick={onPhone} className="kiosk-tap rounded-2xl border-2 border-inkline bg-white px-5 py-10 text-center hover:border-maroon">
+          <div className="text-4xl text-maroon">✆</div>
+          <div className="mt-3 text-xl font-bold">Text me my link</div>
+          <div className="mt-1 text-neutral-500">Sent to your mobile</div>
+        </button>
       </div>
       <button onClick={onSearch} className="kiosk-tap mx-auto mt-6 text-maroon underline-offset-2 hover:underline">
-        Don&apos;t have a code? Find my family
+        None of these? Find my family
+      </button>
+    </div>
+  );
+}
+
+// Recovery at the door. Neutral confirmation either way, so a stranger at the
+// iPad cannot learn whether a number belongs to a family here.
+function PhoneScreen({
+  value, onChange, onSubmit, busy,
+}: {
+  value: string; onChange: (v: string) => void; onSubmit: () => void; busy: boolean;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-md text-center">
+      <h1 className="font-serif text-2xl font-semibold">What is your mobile number?</h1>
+      <p className="mt-2 text-neutral-500">
+        We will text your pickup link to the number the school has on file. It is the same link
+        every day, so save it once.
+      </p>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && value.trim().length >= 10) onSubmit();
+        }}
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
+        aria-label="Your mobile number"
+        placeholder="(404) 555-0123"
+        autoFocus
+        className="mt-6 w-full rounded-2xl border-2 border-inkline px-6 py-5 text-center text-3xl tracking-wide"
+      />
+      <button
+        onClick={onSubmit}
+        disabled={busy || value.trim().length < 10}
+        className="kiosk-tap mt-5 w-full rounded-xl bg-maroon px-8 py-4 text-lg font-semibold text-white disabled:opacity-40"
+      >
+        {busy ? 'Sending…' : 'Text me my link'}
       </button>
     </div>
   );

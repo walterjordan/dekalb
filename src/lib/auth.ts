@@ -135,7 +135,19 @@ export async function consumePasswordResetToken(token: string): Promise<StaffUse
 
 // ---- session cookie ----
 
-export async function createSession(staff: StaffUser): Promise<void> {
+// A staff sign-in started FROM the door kiosk gets a short session. That iPad
+// sits unattended in a hallway, so a 14-day cookie there means the next person
+// to pick it up has the roster. 30 minutes is long enough to check something
+// and short enough that forgetting to sign out is self-healing.
+const KIOSK_SESSION_SECONDS = 30 * 60;
+const NORMAL_SESSION_SECONDS = 14 * 24 * 3600;
+
+export async function createSession(staff: StaffUser, opts?: { shortLived?: boolean }): Promise<void> {
+  // /login/kiosk drops this marker, so every sign-in method (password, Google,
+  // magic link, temp password) inherits the short session without each one
+  // having to know where the sign-in started.
+  const fromKiosk = cookies().get('kiosk_origin')?.value === '1';
+  const seconds = opts?.shortLived || fromKiosk ? KIOSK_SESSION_SECONDS : NORMAL_SESSION_SECONDS;
   const jwt = await new SignJWT({
     purpose: 'staff_session',
     staffId: staff.id,
@@ -145,15 +157,16 @@ export async function createSession(staff: StaffUser): Promise<void> {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('14d')
+    .setExpirationTime(`${seconds}s`)
     .sign(secret());
   cookies().set(COOKIE, jwt, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 14 * 24 * 3600,
+    maxAge: seconds,
     path: '/',
   });
+  if (fromKiosk) cookies().delete('kiosk_origin');
 }
 
 export async function getSession(): Promise<StaffSession | null> {

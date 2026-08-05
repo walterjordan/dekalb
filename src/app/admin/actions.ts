@@ -8,6 +8,8 @@ import { requireSession } from '@/lib/auth';
 import { auditNow } from '@/lib/audit';
 import { normalizePhone } from '@/lib/phone';
 import { GRADES } from '@/lib/rollcall';
+import { enqueueSms, drainSoon } from '@/lib/outbox';
+import { sendEmail, emailConfigured } from '@/lib/email';
 
 function s(fd: FormData, k: string): string {
   return String(fd.get(k) || '').trim();
@@ -302,6 +304,78 @@ export async function createDevice(fd: FormData) {
   // The raw token is shown exactly once, via the redirect target.
   const { redirect } = await import('next/navigation');
   redirect(`/admin/devices?minted=${token}`);
+}
+
+// Re-send a guardian their own /p/<token> link. Parents lose the welcome
+// letter constantly, and the link is the whole point of the carline flow, so
+// re-sending has to be one tap rather than a support conversation.
+//
+// The link is NOT regenerated here: parentToken is stable, so a re-send is
+// safe to repeat and an old letter keeps working. Use `rotateParentLink` when
+// a link is actually compromised.
+export async function sendParentLink(fd: FormData) {
+  const { session, tenant } = await ctx();
+  const id = s(fd, 'id');
+  const channel = s(fd, 'channel'); // 'sms' | 'email'
+  const guardian = await prisma.guardian.findUnique({ where: { id }, include: { household: true } });
+  if (!guardian || guardian.household.tenantId !== tenant.id) return;
+
+  const base = (process.env.APP_BASE_URL || 'http://localhost:3100').replace(/\/+$/, '');
+  const link = `${base}/p/${guardian.parentToken}`;
+  const who = `${guardian.firstName} ${guardian.lastName}`;
+  let outcome = '';
+
+  if (channel === 'email') {
+    if (!guardian.email) outcome = 'no email on file';
+    else if (!emailConfigured()) outcome = 'email is not configured on this server';
+    else {
+      const ok = await sendEmail({
+        to: guardian.email,
+        fromName: tenant.name,
+        subject: `Your pickup link for ${tenant.name}`,
+        text: [
+          `Hi ${guardian.firstName},`,
+          '',
+          `This is your personal pickup page for ${tenant.name}. Open it on your phone when you arrive`,
+          'and tap "I\'m here" to let us know. You do not need to get out of the car.',
+          '',
+          link,
+          '',
+          `Your family PIN is ${guardian.household.pin}. You can type that at the front-door iPad instead.`,
+          '',
+          'Keep this link private. It is yours alone. If you lose it, ask the front desk to send it again.',
+        ].join('\n'),
+      });
+      outcome = ok ? `emailed to ${guardian.email}` : 'email failed to send';
+    }
+  } else {
+    if (!guardian.phone) outcome = 'no mobile number on file';
+    else {
+      // Idempotency is per guardian per minute: a double-click cannot send
+      // twice, but a genuine re-send a minute later still goes out.
+      const minute = new Date().toISOString().slice(0, 16);
+      await prisma.$transaction(async (tx) => {
+        await enqueueSms(tx, {
+          tenantId: tenant.id,
+          toPhone: guardian.phone as string,
+          body: `${tenant.name}: your pickup link. Open it when you arrive and tap "I'm here". ${link}`,
+          kind: 'PARENT_LINK',
+          idempotencyKey: `parentlink:${guardian.id}:${minute}`,
+          refType: 'Guardian',
+          refId: guardian.id,
+        });
+      });
+      drainSoon();
+      outcome = `queued to ${guardian.phone}`;
+    }
+  }
+
+  await auditNow({
+    tenantId: tenant.id, actorKind: 'STAFF', actorId: session.staffId, actorName: session.name,
+    action: 'PARENT_LINK_SENT', entity: 'Guardian', entityId: guardian.id,
+    detail: `Parent link for ${who} via ${channel || 'sms'}: ${outcome}.`,
+  });
+  revalidatePath('/admin/families');
 }
 
 export async function revokeDevice(fd: FormData) {

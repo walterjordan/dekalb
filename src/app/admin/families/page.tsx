@@ -3,7 +3,7 @@ import { requireTenant } from '@/lib/tenant';
 import { requireSession } from '@/lib/auth';
 import {
   saveHousehold, saveGuardian, saveAuthorizedAdult, revokeAuthorizedAdult,
-  saveRestriction, endRestriction,
+  saveRestriction, endRestriction, sendParentLink,
 } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -82,22 +82,63 @@ export default async function FamiliesPage({ searchParams }: { searchParams: { f
             <section className="rounded-xl border border-inkline bg-white p-4 shadow-sm">
               <h3 className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">Parents / guardians</h3>
               {h.guardians.map((g) => (
-                <div key={g.id} className="mt-2 flex flex-wrap items-baseline gap-2 text-sm">
-                  <span className="font-semibold">{g.firstName} {g.lastName}</span>
-                  {g.isPrimary && <span className="rounded bg-sunk px-1.5 py-0.5 font-mono text-[10px]">PRIMARY</span>}
-                  <span className="text-neutral-500">{g.relationship}</span>
-                  <span className="font-mono text-xs text-neutral-400">{g.phone || 'no phone'}</span>
-                  <a href={`${base}/p/${g.parentToken}`} className="ml-auto text-xs text-maroon hover:underline">parent link</a>
+                <div key={g.id} className="mt-2 border-b border-inkline pb-2 last:border-b-0">
+                  <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                    <span className="font-semibold">{g.firstName} {g.lastName}</span>
+                    {g.isPrimary && <span className="rounded bg-sunk px-1.5 py-0.5 font-mono text-[10px]">PRIMARY</span>}
+                    <span className="text-neutral-500">{g.relationship}</span>
+                    <span className="font-mono text-xs text-neutral-400">{g.phone || 'no phone'}</span>
+                    <span className="font-mono text-xs text-neutral-400">{g.email || 'no email'}</span>
+                  </div>
+                  {/* Send the parent their own link. Parents lose the welcome
+                      letter constantly and this is the link the carline flow
+                      depends on, so re-sending is one tap, not a phone call. */}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-400">Send link</span>
+                    <form action={sendParentLink}>
+                      <input type="hidden" name="id" value={g.id} />
+                      <input type="hidden" name="channel" value="sms" />
+                      <button
+                        disabled={!g.phone}
+                        title={g.phone ? `Text the pickup link to ${g.phone}` : 'No mobile number on file'}
+                        className="rounded-md border border-inkline px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Text
+                      </button>
+                    </form>
+                    <form action={sendParentLink}>
+                      <input type="hidden" name="id" value={g.id} />
+                      <input type="hidden" name="channel" value="email" />
+                      <button
+                        disabled={!g.email}
+                        title={g.email ? `Email the pickup link to ${g.email}` : 'No email on file'}
+                        className="rounded-md border border-inkline px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Email
+                      </button>
+                    </form>
+                    <a
+                      href={`/admin/letters?f=${h.id}`}
+                      title="Printable letter for this family, with the QR code and PIN"
+                      className="rounded-md border border-inkline px-2.5 py-1 text-xs font-semibold"
+                    >
+                      Print
+                    </a>
+                    <a href={`${base}/p/${g.parentToken}`} className="ml-auto text-xs text-maroon hover:underline">
+                      open parent page
+                    </a>
+                  </div>
                 </div>
               ))}
-              <form action={saveGuardian} className="mt-3 grid gap-2 border-t border-inkline pt-3 sm:grid-cols-5">
+              <form action={saveGuardian} className="mt-3 grid gap-2 border-t border-inkline pt-3 sm:grid-cols-6">
                 <input type="hidden" name="householdId" value={h.id} />
                 <input name="firstName" required placeholder="First" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
                 <input name="lastName" required placeholder="Last" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
                 <input name="phone" placeholder="Mobile" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
+                <input name="email" type="email" placeholder="Email" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
                 <input name="relationship" placeholder="Relation" className="rounded-md border border-inkline px-2 py-1.5 text-sm" />
                 <label className="flex items-center gap-1.5 text-xs text-neutral-500"><input type="checkbox" name="isPrimary" /> primary</label>
-                <button className="rounded-md border border-inkline px-3 py-1.5 text-xs font-semibold sm:col-start-5">+ Guardian</button>
+                <button className="rounded-md border border-inkline px-3 py-1.5 text-xs font-semibold sm:col-start-6">+ Guardian</button>
               </form>
             </section>
 

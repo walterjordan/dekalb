@@ -111,7 +111,7 @@ async function main() {
   console.log('\n-- 4. unapproved adult: bound single-use link --');
   const req2 = await createPickupRequest({
     tenant, householdId: single.id, studentIds: [single.students[0].id],
-    requesterName: 'Random Stranger', method: 'SEARCH', dismissalMethod: 'WALKUP',
+    requesterName: 'Family Friend', method: 'SEARCH', dismissalMethod: 'WALKUP',
   });
   ok('unknown adult routes to NEEDS_APPROVAL', req2.status === 'NEEDS_APPROVAL' && req2.reason === 'UNAPPROVED_ADULT');
   const apMsg = await prisma.messageOutbox.findFirst({ where: { kind: 'APPROVAL_REQUEST', refId: req2.requestId } });
@@ -128,7 +128,7 @@ async function main() {
   ok('bound link approves', good.ok === true);
   const again = await resolveApproval(tenant, rawToken, 'APPROVED_ALWAYS');
   ok('link is single-use', again.ok === false && /already used/.test(again.message));
-  const adult = await prisma.authorizedAdult.findFirst({ where: { householdId: single.id, name: 'Random Stranger', status: 'ACTIVE' } });
+  const adult = await prisma.authorizedAdult.findFirst({ where: { householdId: single.id, name: 'Family Friend', status: 'ACTIVE' } });
   ok('today-only approval has an expiry', !!adult?.expiresAt);
   const item2 = await prisma.pickupRequestStudent.findFirst({ where: { requestId: req2.requestId } });
   ok('held item un-held after approval', item2?.status === 'REQUESTED');

@@ -8,13 +8,22 @@ export const dynamic = 'force-dynamic';
 // Printable PIN/QR letters, one per family. Print → save as PDF from the
 // browser; no PDF library needed. Each letter carries the family PIN and the
 // primary guardian's personal QR + parent link.
-export default async function LettersPage({ searchParams }: { searchParams: { print?: string } }) {
+export default async function LettersPage({ searchParams }: { searchParams: { print?: string; f?: string } }) {
   await requireSession(['ADMIN', 'SUPERVISOR']);
   const tenant = await requireTenant();
   const base = (process.env.APP_BASE_URL || 'http://localhost:3100').replace(/\/+$/, '');
 
+  // `?f=<householdId>` prints ONE family, which is what the Print button on
+  // /admin/families links to. Without it you get the whole school for the
+  // first-day mail-out.
+  const only = searchParams.f || null;
+
   const households = await prisma.household.findMany({
-    where: { tenantId: tenant.id, students: { some: { active: true } } },
+    where: {
+      tenantId: tenant.id,
+      students: { some: { active: true } },
+      ...(only ? { id: only } : {}),
+    },
     include: {
       guardians: { orderBy: { isPrimary: 'desc' } },
       students: { where: { active: true }, orderBy: { firstName: 'asc' } },
@@ -39,9 +48,14 @@ export default async function LettersPage({ searchParams }: { searchParams: { pr
 
   return (
     <main>
-      <div className="flex items-center gap-3 print:hidden">
-        <h1 className="font-serif text-xl font-semibold">Family PIN letters</h1>
-        <span className="font-mono text-xs text-neutral-400">{letters.length} families</span>
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
+        <h1 className="font-serif text-xl font-semibold">
+          {only ? 'Family letter' : 'Family PIN letters'}
+        </h1>
+        <span className="font-mono text-xs text-neutral-400">{letters.length} {letters.length === 1 ? 'family' : 'families'}</span>
+        {only && (
+          <a href="/admin/letters" className="text-xs text-maroon hover:underline">print all families instead</a>
+        )}
         <span className="ml-auto text-xs text-neutral-400">Use your browser&apos;s Print → Save as PDF. One letter per page.</span>
       </div>
 
