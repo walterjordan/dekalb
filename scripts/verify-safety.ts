@@ -34,13 +34,52 @@ async function main() {
   const staff = { staffId: admin.id, name: admin.name, role: 'STAFF' };
   const supervisor = { staffId: admin.id, name: admin.name, role: 'ADMIN' };
 
-  // Clean any earlier verify-run state for today.
-  await prisma.pickupApproval.deleteMany({ where: { tenantId: tenant.id } });
-  await prisma.pickupRequestStudent.deleteMany({ where: { request: { tenantId: tenant.id, date } } });
-  await prisma.pickupRequest.deleteMany({ where: { tenantId: tenant.id, date } });
-  await prisma.attendanceRecord.deleteMany({ where: { tenantId: tenant.id, date } });
+  // ---- guard: never touch real families ----
+  //
+  // This script runs against the LIVE database and its fixtures are the
+  // `demo-seed` households. The cleanup below used to be tenant-wide, which
+  // was harmless while the tenant held nothing but demo data and would have
+  // deleted a real school day's attendance the moment a real roster landed.
+  //
+  // Two defences, because scoping alone is only as good as the next edit:
+  //  1. every destructive query is scoped to demo-seed households, and
+  //  2. this hard stop refuses to run at all if a NON-demo student already has
+  //     attendance recorded today, which is the signature of a live school day.
+  //
+  // ALLOW_LIVE_TENANT=1 overrides, for the case where you genuinely mean it.
+  // The OR is load-bearing. `notes: { not: 'demo-seed' }` alone compiles to
+  // `notes <> 'demo-seed'`, which is NULL (not true) for a NULL notes column,
+  // so every real family — none of which carry the demo marker — would be
+  // silently invisible to this guard. Verified by tripping it deliberately.
+  const realActivity = await prisma.attendanceRecord.count({
+    where: {
+      tenantId: tenant.id,
+      date,
+      student: { household: { OR: [{ notes: null }, { notes: { not: 'demo-seed' } }] } },
+    },
+  });
+  if (realActivity > 0 && process.env.ALLOW_LIVE_TENANT !== '1') {
+    console.error(
+      `\nREFUSING TO RUN. ${realActivity} attendance record(s) exist today for non-demo families in ` +
+        `"${tenant.slug}".\nThat looks like a live school day, and this script deletes today's ` +
+        `pickup state for its fixtures.\nRun it against a demo tenant, or set ALLOW_LIVE_TENANT=1 ` +
+        `if you are certain.\n`,
+    );
+    process.exit(2);
+  }
+
+  // Clean any earlier verify-run state for today, scoped to the demo families
+  // this script owns. PickupApproval and PickupRequestStudent cascade from
+  // PickupRequest, so they are filtered through the request's household.
+  const demoWhere = { household: { tenantId: tenant.id, notes: 'demo-seed' } };
+  await prisma.pickupApproval.deleteMany({ where: { request: demoWhere } });
+  await prisma.pickupRequestStudent.deleteMany({ where: { request: { ...demoWhere, date } } });
+  await prisma.pickupRequest.deleteMany({ where: { ...demoWhere, date } });
+  await prisma.attendanceRecord.deleteMany({
+    where: { tenantId: tenant.id, date, student: { household: { notes: 'demo-seed' } } },
+  });
   await prisma.authorizedAdult.updateMany({
-    where: { household: { tenantId: tenant.id }, createdVia: 'KIOSK_REQUEST' },
+    where: { household: { tenantId: tenant.id, notes: 'demo-seed' }, createdVia: 'KIOSK_REQUEST' },
     data: { status: 'REVOKED' },
   });
 
