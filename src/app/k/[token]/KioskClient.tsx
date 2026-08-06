@@ -31,13 +31,9 @@ const RESET_MS = 45_000;
 export default function KioskClient({
   token,
   tenantName,
-  deviceLabel,
-  presentCount,
 }: {
   token: string;
   tenantName: string;
-  deviceLabel: string;
-  presentCount: number;
 }) {
   const [step, setStep] = useState<Step>({ s: 'home' });
   const [query, setQuery] = useState('');
@@ -105,7 +101,7 @@ export default function KioskClient({
       try {
         const data = (await api('lookup', { query: q })) as { matches: Masked[] };
         if (!data.matches.length) {
-          setStep({ s: 'error', message: 'No matching family found. Please check the code or see the front desk.' });
+          setStep({ s: 'error', message: 'We could not find that family. Please check the code, or see the front desk.' });
         } else {
           setStep({ s: 'confirm', matches: data.matches, method });
         }
@@ -193,7 +189,7 @@ export default function KioskClient({
       <div className="flex flex-1 flex-col px-6 py-6">
         {step.s !== 'home' ? (
           <button onClick={reset} className="kiosk-tap mb-3 self-start text-sm text-maroon">
-            ← Start over
+            Start over
           </button>
         ) : null}
 
@@ -290,7 +286,7 @@ export default function KioskClient({
                 </button>
               ))}
             </div>
-            <p className="mt-4 text-sm text-neutral-500">Only continue if this looks familiar.</p>
+            <p className="mt-4 text-sm text-neutral-500">Only continue if this is your family.</p>
           </div>
         )}
 
@@ -300,7 +296,7 @@ export default function KioskClient({
             <div className="mt-5 rounded-xl border border-inkline bg-sunk px-5 py-4 font-mono text-base">
               {step.picked.masked}
             </div>
-            <p className="mt-3 text-sm text-neutral-500">Only continue if this household information looks familiar.</p>
+            <p className="mt-3 text-sm text-neutral-500">Only continue if this is your family.</p>
             <div className="mt-6 flex gap-3">
               <button onClick={reset} className="kiosk-tap flex-1 rounded-xl border-2 border-inkline bg-white py-4 font-semibold">
                 Not my family
@@ -354,7 +350,7 @@ export default function KioskClient({
         {step.s === 'sent' && (
           <div className="mx-auto w-full max-w-md text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-good-bg text-3xl text-good">✓</div>
-            <h1 className="mt-4 font-serif text-2xl font-semibold">Request sent to the release desk.</h1>
+            <h1 className="mt-4 font-serif text-2xl font-semibold">Request sent to the front desk.</h1>
             <p className="mt-2 text-neutral-600">
               {step.names} - we will text you when they are at the door. Please stay in the carline
               or wait by the entrance.
@@ -370,7 +366,7 @@ export default function KioskClient({
 
         {step.s === 'error' && (
           <div className="mx-auto w-full max-w-md text-center">
-            <h1 className="font-serif text-2xl font-semibold">Hmm.</h1>
+            <h1 className="font-serif text-2xl font-semibold">Sorry, that did not work.</h1>
             <p className="mt-3 text-neutral-600">{step.message}</p>
             <button onClick={reset} className="kiosk-tap mt-8 rounded-xl bg-maroon px-8 py-3 font-semibold text-white">
               Start over
@@ -381,7 +377,7 @@ export default function KioskClient({
 
       <footer className="flex items-center gap-2 border-t border-inkline bg-white px-5 py-2 font-mono text-xs text-neutral-400">
         <span className="h-1.5 w-1.5 rounded-full bg-good" />
-        {presentCount} students present · {deviceLabel} online
+        Pickup kiosk ready
       </footer>
     </main>
   );
@@ -524,7 +520,7 @@ function ScanScreen({ onResult, onFallback, busy }: { onResult: (v: string) => v
         };
         raf = requestAnimationFrame(scan);
       } catch {
-        setError('Camera is not available on this kiosk. Use your PIN instead.');
+        setError('The camera is not available on this iPad. Please use your PIN instead.');
       }
     }
     start();
@@ -546,7 +542,7 @@ function ScanScreen({ onResult, onFallback, busy }: { onResult: (v: string) => v
           <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
         </div>
       )}
-      <p className="mt-3 text-sm text-neutral-500">{busy ? 'Found it - one moment…' : 'The code is on your parent page.'}</p>
+      <p className="mt-3 text-sm text-neutral-500">{busy ? 'Found it - one moment…' : 'The code is on your pickup page.'}</p>
       <button onClick={onFallback} className="kiosk-tap mt-5 rounded-xl border-2 border-inkline bg-white px-6 py-3 font-semibold">
         Enter PIN instead
       </button>
@@ -651,7 +647,7 @@ function SelectScreen({
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <span className="text-sm text-neutral-500">Method</span>
+        <span className="text-sm text-neutral-500">How are you picking up?</span>
         <div className="flex overflow-hidden rounded-lg border border-inkline">
           {['CARLINE', 'WALKUP', 'BUS'].map((m) => (
             <button
@@ -670,7 +666,7 @@ function SelectScreen({
         onClick={() => onSubmit(selected, who.trim(), method)}
         className="kiosk-tap mt-6 w-full rounded-xl bg-maroon py-4 text-lg font-semibold text-white disabled:opacity-40"
       >
-        {busy ? 'Sending…' : 'Request pickup →'}
+        {busy ? 'Sending…' : 'Request pickup'}
       </button>
     </div>
   );
@@ -713,15 +709,15 @@ function HoldScreen({
       {state === 'waiting' && (
         <>
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-warn-bg text-3xl text-warn">
-            {kind === 'RESTRICTION' ? '◆' : '⚠'}
+            !
           </div>
           <h1 className="mt-4 font-serif text-2xl font-semibold">
-            {kind === 'RESTRICTION' ? 'Please see a staff member at the release desk.' : 'Staff approval needed.'}
+            {kind === 'RESTRICTION' ? 'Please see a staff member at the front desk.' : 'Staff approval needed.'}
           </h1>
           <p className="mt-2 text-neutral-600">
             {kind === 'RESTRICTION'
               ? 'A staff member will be with you shortly.'
-              : `"${requester}" is not on the approved pickup list for this family. We texted the parent to confirm. Please see a staff member at the release desk.`}
+              : `"${requester}" is not on the approved pickup list for this family. We texted the parent to confirm. Please see a staff member at the front desk.`}
           </p>
           {kind === 'UNAPPROVED_ADULT' && (
             <p className="mt-5 inline-flex items-center gap-2 font-mono text-sm text-neutral-500">

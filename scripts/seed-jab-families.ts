@@ -71,7 +71,7 @@ async function main() {
     let household = await prisma.household.findFirst({ where: { tenantId: tenant.id, name: f.family } });
     if (!household) {
       household = await prisma.household.create({
-        data: { tenantId: tenant.id, name: f.family, pin: await uniquePin(tenant.id) },
+        data: { tenantId: tenant.id, name: f.family, pin: await uniquePin(tenant.id), notes: 'jab-test' },
       });
       await auditNow({
         tenantId: tenant.id, actorKind: 'STAFF', actorName: 'seed-jab-families',

@@ -101,6 +101,21 @@ export default async function RollCallPage({
                         ? 'border-warn bg-warn-bg text-warn'
                         : 'border-inkline text-transparent'
                   }`}
+                  role="img"
+                  title={
+                    r.state === 'ABSENT'
+                      ? 'Absent'
+                      : r.state === 'CHECKED_IN' || r.state === 'RELEASED'
+                        ? 'Checked in'
+                        : 'Not marked yet'
+                  }
+                  aria-label={
+                    r.state === 'ABSENT'
+                      ? 'Absent'
+                      : r.state === 'CHECKED_IN' || r.state === 'RELEASED'
+                        ? 'Checked in'
+                        : 'Not marked yet'
+                  }
                 >
                   {r.state === 'ABSENT' ? '!' : '✓'}
                 </span>
@@ -122,7 +137,7 @@ export default async function RollCallPage({
                       </form>
                     </>
                   ) : r.state === 'RELEASED' ? (
-                    <span className="font-mono text-xs text-neutral-400">released</span>
+                    <span className="font-mono text-xs text-neutral-400">Picked up</span>
                   ) : r.state === 'ABSENT' ? (
                     <form action={mark}>
                       <input type="hidden" name="studentId" value={r.studentId} />
@@ -156,8 +171,8 @@ export default async function RollCallPage({
         )}
       </div>
       <p className="mt-3 text-xs text-neutral-400">
-        Not marked and absent are different facts. A student left unmarked shows on the
-        director&apos;s exception list; an absent student does not.
+        Not marked and absent mean different things. A student you never marked shows up as
+        &quot;attendance not marked&quot; on the director&apos;s dashboard. A student marked absent does not.
       </p>
     </main>
   );

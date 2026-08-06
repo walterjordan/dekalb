@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { requireTenant } from '@/lib/tenant';
 import { todayInTz, timeLabel } from '@/lib/dates';
+import { auditActionLabel, pickupStatusLabel } from '@/lib/labels';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,7 @@ export default async function AdminToday() {
   const tenant = await requireTenant();
   const date = todayInTz(tenant.timezone);
 
-  const [present, absent, totalStudents, liveItems, heldRequests, lateToday, balancesDue, failedMsgs, recentAudit, unmarked] =
+  const [present, absent, totalStudents, liveItems, heldRequests, lateToday, balancesDue, recentAudit, unmarked] =
     await Promise.all([
       prisma.attendanceRecord.count({ where: { tenantId: tenant.id, date, status: 'CHECKED_IN' } }),
       prisma.attendanceRecord.count({ where: { tenantId: tenant.id, date, status: 'ABSENT' } }),
@@ -23,7 +24,6 @@ export default async function AdminToday() {
       prisma.pickupRequest.count({ where: { tenantId: tenant.id, date, status: 'NEEDS_APPROVAL' } }),
       prisma.attendanceRecord.count({ where: { tenantId: tenant.id, date, status: 'RELEASED_LATE' } }),
       prisma.household.count({ where: { tenantId: tenant.id, balanceCents: { gt: 0 } } }),
-      prisma.messageOutbox.count({ where: { tenantId: tenant.id, status: 'FAILED' } }),
       prisma.auditLog.findMany({ where: { tenantId: tenant.id }, orderBy: { seq: 'desc' }, take: 10 }),
       prisma.student.count({
         where: { tenantId: tenant.id, active: true, attendance: { none: { date } } },
@@ -32,25 +32,28 @@ export default async function AdminToday() {
 
   const stats = [
     { label: 'Present', value: present, href: '/roll' },
-    { label: 'Not marked', value: unmarked, href: '/roll', warn: unmarked > 0 && present > 0 },
+    { label: 'Attendance not marked', value: unmarked, href: '/roll', warn: unmarked > 0 && present > 0 },
     { label: 'Absent', value: absent, href: '/roll' },
-    { label: 'Waiting', value: liveItems.length, href: '/s' },
-    { label: 'Approvals', value: heldRequests, href: '/s', warn: heldRequests > 0 },
-    { label: 'Late today', value: lateToday, href: '/admin/reports', warn: lateToday > 0 },
-    { label: 'Balances due', value: balancesDue, href: '/admin/families', warn: balancesDue > 0 },
-    { label: 'Failed texts', value: failedMsgs, href: '/admin/reports', warn: failedMsgs > 0 },
+    { label: 'Awaiting release', value: liveItems.length, href: '/s' },
+    { label: 'Needs approval', value: heldRequests, href: '/s', warn: heldRequests > 0 },
+    { label: 'Late pickups', value: lateToday, href: '/admin/reports', warn: lateToday > 0 },
+    { label: 'Families with balances', value: balancesDue, href: '/admin/families', warn: balancesDue > 0 },
   ];
 
   return (
     <main>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="font-serif text-xl font-semibold">{tenant.name}</h1>
-        <span className="whitespace-nowrap font-mono text-xs text-neutral-400">
-          {date} · {totalStudents} students enrolled
+        <span className="whitespace-nowrap text-xs text-neutral-500">
+          {new Date(`${date}T12:00:00`).toLocaleDateString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric',
+          })}
+          {' · '}
+          {totalStudents} students enrolled
         </span>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {stats.map((s) => (
           <Link
             key={s.label}
@@ -66,7 +69,7 @@ export default async function AdminToday() {
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         <section className="rounded-xl border border-inkline bg-white shadow-sm">
           <h2 className="border-b border-inkline px-4 py-2.5 font-mono text-[11px] uppercase tracking-widest text-neutral-400">
-            Live pickup queue
+            Waiting for pickup
           </h2>
           {liveItems.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-neutral-400">Nothing waiting.</p>
@@ -83,7 +86,7 @@ export default async function AdminToday() {
                     i.status === 'NEEDS_APPROVAL' ? 'text-crit' : i.status === 'READY' ? 'text-good' : 'text-warn'
                   }`}
                 >
-                  {i.status.replace('_', ' ')}
+                  {pickupStatusLabel(i.status)}
                 </span>
               </div>
             ))
@@ -92,7 +95,7 @@ export default async function AdminToday() {
 
         <section className="rounded-xl border border-inkline bg-white shadow-sm">
           <h2 className="border-b border-inkline px-4 py-2.5 font-mono text-[11px] uppercase tracking-widest text-neutral-400">
-            Activity ledger (append-only)
+            Activity record
           </h2>
           {recentAudit.map((a) => (
             <div key={a.id} className="border-b border-inkline px-4 py-2 text-sm last:border-b-0">
@@ -102,14 +105,14 @@ export default async function AdminToday() {
                   a.action === 'RELEASED' ? 'text-good' : /DENIED|HELD|REVERSED/.test(a.action) ? 'text-crit' : ''
                 }`}
               >
-                {a.action.replace(/_/g, ' ').toLowerCase()}
+                {auditActionLabel(a.action)}
               </span>{' '}
               <span className="text-neutral-600">{a.detail}</span>
             </div>
           ))}
           <div className="px-4 py-2 text-right">
             <Link href="/admin/ledger" className="text-xs text-maroon hover:underline">
-              Full ledger →
+              See the full record
             </Link>
           </div>
         </section>

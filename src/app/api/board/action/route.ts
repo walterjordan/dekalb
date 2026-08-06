@@ -31,13 +31,13 @@ export async function POST(req: NextRequest) {
         await denyRequest(tenant, String(body.requestId || ''), actor, String(body.reason || ''));
         break;
       default:
-        return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+        return NextResponse.json({ error: 'That action is not available.' }, { status: 400 });
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
-    if (err instanceof AuthError) return NextResponse.json({ error: 'Sign in' }, { status: 401 });
+    if (err instanceof AuthError) return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 });
     if (err instanceof PickupError) return NextResponse.json({ error: err.message }, { status: 400 });
     console.error('board action failed', err);
-    return NextResponse.json({ error: 'Action failed' }, { status: 500 });
+    return NextResponse.json({ error: 'That did not go through. Try again.' }, { status: 500 });
   }
 }

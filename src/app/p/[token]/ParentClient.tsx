@@ -55,7 +55,7 @@ export default function ParentClient({
           <img src={qr} alt="Your family pickup code" className="w-full" />
         </div>
       ) : null}
-      <p className="mt-2 text-center text-sm text-neutral-500">Show this at the kiosk</p>
+      <p className="mt-2 text-center text-sm text-neutral-500">Show this at the front desk iPad</p>
 
       <div className="my-5 flex items-center gap-3 text-xs text-neutral-400">
         <span className="h-px flex-1 bg-inkline" /> or <span className="h-px flex-1 bg-inkline" />
@@ -70,7 +70,7 @@ export default function ParentClient({
       </button>
       {!eligible.length && !msg ? (
         <p className="mt-2 text-center text-xs text-neutral-400">
-          Available once your children are checked in and no pickup is already running.
+          You can request pickup once your children are checked in, as long as there is not one already underway.
         </p>
       ) : null}
       {msg ? <p className="mt-3 rounded-md bg-good-bg px-3 py-2 text-center text-sm text-good">{msg}</p> : null}
@@ -96,7 +96,7 @@ export default function ParentClient({
         <div className="font-mono text-[10px] uppercase tracking-widest text-neutral-400">Approved for pickup</div>
         <p className="mt-2 text-sm text-neutral-600">{approved.join(' · ')}</p>
         <p className="mt-2 text-xs text-neutral-400">
-          To add someone, call the front desk, or approve them by text the first time they pick up.
+          To add someone, call the front desk. You can also approve a new person by text the first time they arrive.
         </p>
       </div>
     </main>

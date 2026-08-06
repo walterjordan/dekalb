@@ -56,11 +56,11 @@ export async function GET() {
         approvalState: approval?.status || null,
         approvalNote:
           approval?.status === 'APPROVED_ONCE'
-            ? `Parent approved, today only`
+            ? `A parent approved this, today only`
             : approval?.status === 'APPROVED_ALWAYS'
-              ? 'Parent approved, permanent'
+              ? 'A parent approved this adult permanently'
               : approval?.status === 'OVERRIDDEN'
-                ? `Override by ${approval.overrideByName}`
+                ? `Approved by ${approval.overrideByName}`
                 : null,
         parentText: msgByItem.get(i.id) || null, // SENT | DELIVERED | FAILED | QUEUED
       };
@@ -72,7 +72,7 @@ export async function GET() {
 
     return NextResponse.json({ rows, presentCount, role: session.role });
   } catch (err) {
-    if (err instanceof AuthError) return NextResponse.json({ error: 'Sign in' }, { status: 401 });
+    if (err instanceof AuthError) return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 });
     throw err;
   }
 }

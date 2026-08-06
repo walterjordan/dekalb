@@ -5,7 +5,7 @@ import { auditNow } from '@/lib/audit';
 import { enqueueSms, drainSoon } from '@/lib/outbox';
 import { GRADES } from '@/lib/rollcall';
 import { revalidatePath } from 'next/cache';
-import { timeLabel } from '@/lib/dates';
+import { timeLabel, dateLabel } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,7 +96,7 @@ export default async function AnnouncementsPage() {
       <h1 className="font-serif text-xl font-semibold">Announcements</h1>
       <p className="mt-1 text-sm text-neutral-500">
         The text carries a short summary plus a link to the full announcement - never the whole
-        thing. One text per family, to the primary contact. Email channel comes in a later phase.
+        thing. One text per family, to the primary contact. Text message only for now.
       </p>
 
       <form action={sendAnnouncement} className="mt-4 grid gap-3 rounded-xl border border-inkline bg-white p-4 shadow-sm">
@@ -124,7 +124,7 @@ export default async function AnnouncementsPage() {
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-semibold">{a.title}</span>
                 <span className="font-mono text-xs text-neutral-400">
-                  {a.sentAt ? `${a.sentAt.toISOString().slice(0, 10)} ${timeLabel(a.sentAt, tenant.timezone)}` : a.status}
+                  {a.sentAt ? `${dateLabel(a.sentAt, tenant.timezone)} ${timeLabel(a.sentAt, tenant.timezone)}` : a.status}
                 </span>
                 <span className="ml-auto font-mono text-xs text-neutral-400">
                   {delivered} families · {a.audienceKind === 'GRADE' ? `grade ${a.audienceGrade}` : a.audienceKind.toLowerCase().replace('_', ' ')}

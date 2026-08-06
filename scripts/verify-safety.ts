@@ -27,6 +27,12 @@ async function expectPickupError(name: string, fn: () => Promise<unknown>, match
   }
 }
 
+// Households these scripts own: the synthetic roster plus the Jordan/Borden
+// pair used for real end-to-end phone tests. Must match scripts/demo-reset.ts,
+// or checking in the test families here permanently trips the guard there (and
+// vice versa).
+const OURS = ['demo-seed', 'jab-test'];
+
 async function main() {
   const tenant = await prisma.tenant.findUniqueOrThrow({ where: { slug: 'dekalb-arts' } });
   const date = todayInTz(tenant.timezone);
@@ -55,7 +61,7 @@ async function main() {
     where: {
       tenantId: tenant.id,
       date,
-      student: { household: { OR: [{ notes: null }, { notes: { not: 'demo-seed' } }] } },
+      student: { household: { OR: [{ notes: null }, { notes: { notIn: OURS } }] } },
     },
   });
   if (realActivity > 0 && process.env.ALLOW_LIVE_TENANT !== '1') {

@@ -63,6 +63,22 @@ async function sendViaTextLink(phone: string, text: string): Promise<{ ok: boole
 
 const MAX_ATTEMPTS = 4;
 
+// Demo/seed numbers live in the 555 range precisely so a drain can never text a
+// real person (see scripts/seed-demo.mjs). Until now they were still DIALLED,
+// failed four times each, and landed FAILED permanently with nothing in the
+// codebase to clear them, which is how the dashboard reached 57 failed texts.
+//
+// Skipping them makes an existing safety convention explicit. A real roster
+// cannot contain a 555 number, so this can never suppress a message to an
+// actual parent.
+const DEMO_PHONE = /^\+1\d{3}555\d{4}$/;
+
+// SKIPPED, deliberately not SENT. Marking a message that was never dialled as
+// "sent" is the same acceptance-is-not-delivery lie that has caused three JAB
+// outages. Every consumer checks for FAILED or QUEUED specifically, so a
+// SKIPPED row is correctly invisible to the dashboard, the board and health.
+const SKIPPED = 'SKIPPED';
+
 /** Drain queued rows. Safe to call concurrently: rows are claimed via an atomic status flip. */
 export async function drainOutbox(limit = 20): Promise<{ sent: number; failed: number }> {
   let sent = 0;
@@ -82,6 +98,14 @@ export async function drainOutbox(limit = 20): Promise<{ sent: number; failed: n
     if (!claimed.count) continue;
     const row = await prisma.messageOutbox.findUnique({ where: { id } });
     if (!row || !row.toPhone) continue;
+
+    if (DEMO_PHONE.test(row.toPhone)) {
+      await prisma.messageOutbox.update({
+        where: { id },
+        data: { status: SKIPPED, lastError: 'Demo number, not dialled.' },
+      });
+      continue;
+    }
 
     const result = await sendViaTextLink(row.toPhone, row.body);
     if (result.ok) {

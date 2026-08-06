@@ -3,6 +3,7 @@
 // "Not marked" is the absence of a row; ABSENT is a deliberate state.
 import { prisma } from '@/lib/prisma';
 import { audit } from '@/lib/audit';
+import { attendanceLabel } from '@/lib/labels';
 import { todayInTz } from '@/lib/dates';
 import type { Tenant } from '@prisma/client';
 import type { StaffActor } from '@/lib/pickup';
@@ -95,7 +96,7 @@ export async function markStudent(
       await audit(tx, {
         tenantId: tenant.id, actorKind: 'STAFF', actorId: actor.staffId, actorName: actor.name,
         action: 'CHECK_IN', entity: 'Student', entityId: studentId,
-        detail: `${name} checked in. Grade ${student.grade} roll call.`,
+        detail: `${name} was checked in during grade ${student.grade} roll call.`,
       });
     } else if (mark === 'ABSENT') {
       if (existing && (existing.status === 'RELEASED' || existing.status === 'RELEASED_LATE')) {
@@ -127,7 +128,7 @@ export async function markStudent(
       await audit(tx, {
         tenantId: tenant.id, actorKind: 'STAFF', actorId: actor.staffId, actorName: actor.name,
         action: 'CHECK_IN_UNDONE', entity: 'Student', entityId: studentId,
-        detail: `${name} roll-call mark undone (was ${existing.status.toLowerCase()}).`,
+        detail: `The roll call mark for ${name} was undone. They had been marked ${attendanceLabel(existing.status).toLowerCase()}.`,
       });
     }
   });

@@ -16,7 +16,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     include: { household: true },
   });
   if (!guardian || guardian.household.tenantId !== tenant.id || !guardian.canPickup) {
-    return NextResponse.json({ error: 'This link is not active.' }, { status: 403 });
+    return NextResponse.json({ error: 'This pickup link is no longer active. Please see the front desk.' }, { status: 403 });
   }
 
   const date = todayInTz(tenant.timezone);
@@ -31,7 +31,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     (s) => s.attendance[0]?.status === 'CHECKED_IN' && !s.requestItems.length,
   );
   if (!eligible.length) {
-    return NextResponse.json({ error: 'No one is ready for pickup right now.' }, { status: 400 });
+    return NextResponse.json({ error: 'Nobody is ready for pickup just yet. Please check with the front desk.' }, { status: 400 });
   }
 
   try {

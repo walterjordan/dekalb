@@ -1,4 +1,5 @@
 'use client';
+import { dismissalLabel } from '@/lib/labels';
 // Release desk board. Polls every 6s and keeps last-known rows on a failed
 // fetch (flaky wifi must degrade to stale, never to blank). The release
 // confirm is a full-screen step: the human moment gets a whole screen.
@@ -24,12 +25,12 @@ interface Row {
 }
 
 const TAG: Record<string, { label: string; cls: string }> = {
-  REQUESTED: { label: 'REQUESTED', cls: 'bg-warn-bg text-warn' },
-  NEEDS_APPROVAL: { label: 'NEEDS APPROVAL', cls: 'bg-crit-bg text-crit' },
-  EN_ROUTE: { label: 'EN ROUTE', cls: 'bg-blue-100 text-blue-800' },
-  READY: { label: 'READY', cls: 'bg-good-bg text-good' },
-  RELEASED: { label: 'RELEASED', cls: 'bg-neutral-800 text-white' },
-  DENIED: { label: 'DENIED', cls: 'bg-crit text-white' },
+  REQUESTED: { label: 'Requested', cls: 'bg-warn-bg text-warn' },
+  NEEDS_APPROVAL: { label: 'Needs approval', cls: 'bg-crit-bg text-crit' },
+  EN_ROUTE: { label: 'On the way', cls: 'bg-blue-100 text-blue-800' },
+  READY: { label: 'At the door', cls: 'bg-good-bg text-good' },
+  RELEASED: { label: 'Released', cls: 'bg-neutral-800 text-white' },
+  DENIED: { label: 'Denied', cls: 'bg-crit text-white' },
 };
 
 export default function BoardClient() {
@@ -75,11 +76,11 @@ export default function BoardClient() {
           body: JSON.stringify(payload),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'Action failed');
+        if (!res.ok) throw new Error(data.error || 'That did not go through. Try again.');
         await load();
         return true;
       } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Action failed');
+        setErr(e instanceof Error ? e.message : 'That did not go through. Try again.');
         return false;
       }
     },
@@ -140,7 +141,7 @@ export default function BoardClient() {
         </span>
         {stale && (
           <span className="rounded-full bg-crit-bg px-3 py-0.5 font-mono text-xs font-semibold text-crit">
-            OFFLINE - showing last known
+            Connection lost. Showing the last update.
           </span>
         )}
         <Link href="/" className="ml-auto text-sm text-maroon">
@@ -166,7 +167,7 @@ export default function BoardClient() {
 
       {restricted.length > 0 && (
         <div className="mb-3 rounded-lg bg-neutral-900 px-4 py-3 text-white">
-          <div className="font-mono text-[11px] tracking-widest">RESTRICTION ON FILE</div>
+          <div className="font-mono text-[11px] tracking-widest">DO NOT RELEASE</div>
           {restricted.map((r) => (
             <div key={r.itemId} className="mt-1 text-sm opacity-90">
               {r.name}, Grade {r.grade} - do not release. Take to the front office.
@@ -194,7 +195,9 @@ export default function BoardClient() {
                 <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${TAG[r.status].cls}`}>
                   {TAG[r.status].label}
                 </span>
-                {r.name} → {r.requester}
+                {r.status === 'DENIED'
+                  ? `Pickup for ${r.name} was denied (${r.requester})`
+                  : `${r.name} released to ${r.requester}`}
               </div>
             ))}
           </>
@@ -232,13 +235,13 @@ function BoardRow({
       <div className="mt-0.5 text-xs text-neutral-500">
         {row.room ? `${row.room} · ` : ''}
         {row.requester}
-        {row.requesterKind === 'UNKNOWN' ? ' (not on list)' : ''} · {row.dismissal.toLowerCase()}
+        {row.requesterKind === 'UNKNOWN' ? ' (not on the approved list)' : ''} · {dismissalLabel(row.dismissal).toLowerCase()}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <span className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide ${tag.cls}`}>{tag.label}</span>
         {row.status === 'REQUESTED' && (
           <button onClick={() => onAdvance('EN_ROUTE')} className="kiosk-tap rounded-md border border-inkline px-3 py-1 text-xs font-semibold">
-            Getting ready
+            On the way
           </button>
         )}
         {row.status === 'EN_ROUTE' && (
@@ -259,10 +262,10 @@ function BoardRow({
       </div>
       {row.approvalNote && <div className="mt-1.5 text-xs text-good">{row.approvalNote}</div>}
       {row.parentText === 'FAILED' && (
-        <div className="mt-1.5 text-xs font-semibold text-crit">Parent text NOT delivered - call the guardian.</div>
+        <div className="mt-1.5 text-xs font-semibold text-crit">Parent text was not delivered. Please call the guardian.</div>
       )}
       {row.restricted && (
-        <div className="mt-1.5 text-xs font-semibold text-crit">Restriction on file. Reason withheld from floor staff by design.</div>
+        <div className="mt-1.5 text-xs font-semibold text-crit">Do not release. Front office staff must handle this pickup.</div>
       )}
     </div>
   );
@@ -291,11 +294,11 @@ function ReleaseConfirm({
           k="Status"
           v={row.requesterKind === 'GUARDIAN' ? 'Guardian on file' : row.approvalNote || 'Approved adult'}
         />
-        <Field k="Requested" v={`${row.requestedAt} · ${row.dismissal.toLowerCase()}`} />
+        <Field k="Requested" v={`${row.requestedAt} · ${dismissalLabel(row.dismissal).toLowerCase()}`} />
       </div>
       {unusual && (
         <p className="mt-3 rounded-md bg-warn-bg px-3 py-2 text-sm font-semibold text-warn">
-          Not a regular pickup. Check photo ID before releasing.
+          Photo ID check required. Confirm the adult's photo ID before releasing.
         </p>
       )}
       {error ? <p className="mt-3 rounded-md bg-crit-bg px-3 py-2 text-sm text-crit">{error}</p> : null}
@@ -329,9 +332,9 @@ function HoldResolve({
   const [reason, setReason] = useState('');
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <h1 className="font-serif text-2xl font-semibold">{row.restricted ? 'Front office' : 'Held pickup'}</h1>
+      <h1 className="font-serif text-2xl font-semibold">{row.restricted ? 'Front office' : 'Pickup needs approval'}</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        {row.restricted ? 'Restriction on file - front office only' : 'Adult not on the approved list'}
+        {row.restricted ? 'Do not release. Front office only.' : 'Adult not on the approved list'}
       </p>
       <div className="mt-5 grid gap-3 rounded-xl border border-inkline bg-sunk p-4">
         <Field k="Student" v={`${row.name}, Grade ${row.grade}`} />
@@ -341,11 +344,11 @@ function HoldResolve({
       </div>
       {row.restricted ? (
         <p className="mt-3 rounded-md bg-crit-bg px-3 py-2 text-sm text-crit">
-          Do not release. {isSupervisor ? 'Overriding a restriction requires a written reason and is recorded permanently.' : 'Only a supervisor can resolve this.'}
+          Do not release. {isSupervisor ? 'A supervisor can approve this, but must give a written reason, and it stays on the record.' : 'Only a supervisor can resolve this.'}
         </p>
       ) : (
         <p className="mt-3 text-sm text-neutral-500">
-          The parent was texted an approval link. If they approve, this clears on its own.{' '}
+          The parent was texted to confirm. If they say yes, this clears on its own.{' '}
           {isSupervisor ? 'An override requires a written reason.' : ''}
         </p>
       )}
@@ -353,7 +356,7 @@ function HoldResolve({
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Reason (required for override or deny)"
+          placeholder="Enter a reason to approve or refuse"
           rows={2}
           className="mt-4 w-full rounded-lg border border-inkline px-3 py-2 text-sm outline-none focus:border-maroon"
         />
@@ -366,7 +369,7 @@ function HoldResolve({
         {isSupervisor && (
           <>
             <button onClick={() => onDeny(reason)} className="kiosk-tap flex-1 rounded-xl bg-crit py-3 font-bold text-white">
-              Deny release
+              Refuse pickup
             </button>
             <button
               onClick={() => onOverride(reason)}

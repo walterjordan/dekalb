@@ -16,22 +16,22 @@ export default async function DevicesPage({ searchParams }: { searchParams: { mi
     <main className="max-w-3xl">
       <h1 className="font-serif text-xl font-semibold">Kiosk devices</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Each iPad gets its own link. The device heartbeat feeds uptime monitoring; revoke a device
-        and its link stops working immediately.
+        Each iPad gets its own link. Every iPad checks in so you can see it is working. Remove a
+        device and its link stops working straight away.
       </p>
 
       {searchParams.minted ? (
         <div className="mt-4 rounded-xl border-2 border-good bg-good-bg p-4">
           <p className="text-sm font-semibold text-good">Kiosk created. Open this link on the iPad, then add it to the home screen:</p>
           <p className="mt-2 break-all rounded bg-white px-3 py-2 font-mono text-xs">{base}/k/{searchParams.minted}</p>
-          <p className="mt-2 text-xs text-neutral-500">This link is shown once. If you lose it, revoke the device and mint a new one.</p>
+          <p className="mt-2 text-xs text-neutral-500">This link is shown once. If you lose it, remove the device and create a new one.</p>
         </div>
       ) : null}
 
       <form action={createDevice} className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-inkline bg-white p-4 shadow-sm">
         <input name="label" required placeholder='Label (e.g. "Front door iPad")' className="min-w-56 flex-1 rounded-md border border-inkline px-3 py-2 text-sm" />
         <input name="location" placeholder="Location" className="rounded-md border border-inkline px-3 py-2 text-sm" />
-        <button className="rounded-md bg-maroon px-4 py-2 text-sm font-semibold text-white">Mint kiosk link</button>
+        <button className="rounded-md bg-maroon px-4 py-2 text-sm font-semibold text-white">Create kiosk link</button>
       </form>
 
       <section className="mt-4 overflow-x-auto rounded-xl border border-inkline bg-white shadow-sm">
@@ -54,11 +54,11 @@ export default async function DevicesPage({ searchParams }: { searchParams: { mi
                   </td>
                   <td className="px-4 py-2">
                     {d.status === 'revoked' ? (
-                      <span className="rounded bg-crit-bg px-2 py-0.5 font-mono text-[10px] font-bold text-crit">REVOKED</span>
+                      <span className="rounded bg-crit-bg px-2 py-0.5 font-mono text-[10px] font-bold text-crit">Removed</span>
                     ) : fresh ? (
-                      <span className="rounded bg-good-bg px-2 py-0.5 font-mono text-[10px] font-bold text-good">ONLINE</span>
+                      <span className="rounded bg-good-bg px-2 py-0.5 font-mono text-[10px] font-bold text-good">Working</span>
                     ) : (
-                      <span className="rounded bg-warn-bg px-2 py-0.5 font-mono text-[10px] font-bold text-warn">QUIET</span>
+                      <span className="rounded bg-warn-bg px-2 py-0.5 font-mono text-[10px] font-bold text-warn">No recent activity</span>
                     )}
                   </td>
                   <td className="px-4 py-2 text-right">

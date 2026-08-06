@@ -138,7 +138,7 @@ export default async function ImportPage({
         </p>
       ) : null}
       {searchParams.err ? (
-        <p className="mt-4 rounded-md bg-crit-bg px-4 py-3 text-sm text-crit">Nothing valid to import - check the column order.</p>
+        <p className="mt-4 rounded-md bg-crit-bg px-4 py-3 text-sm text-crit">Nothing could be imported. Check the column order and try again.</p>
       ) : null}
 
       <form action={runImport} className="mt-5">
@@ -151,7 +151,7 @@ export default async function ImportPage({
         />
         <div className="mt-3 flex items-center gap-3">
           <button className="rounded-md bg-maroon px-5 py-2.5 text-sm font-semibold text-white">Validate and import</button>
-          <span className="text-xs text-neutral-400">Rows with problems are skipped and reported; nothing is double-imported.</span>
+          <span className="text-xs text-neutral-400">Any row with a problem is skipped and listed for you. Nobody is added twice.</span>
         </div>
       </form>
     </main>

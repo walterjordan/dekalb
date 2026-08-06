@@ -4,6 +4,7 @@
 // restrictions are re-checked at release time, not just at request time.
 import { prisma } from '@/lib/prisma';
 import { audit } from '@/lib/audit';
+import { dismissalLabel, howRequested, pickupStatusLabel, requesterKindLabel } from '@/lib/labels';
 import { enqueueSms, drainSoon } from '@/lib/outbox';
 import { sha256, newToken } from '@/lib/auth';
 import { lastFour, normalizePhone } from '@/lib/phone';
@@ -230,7 +231,7 @@ export async function createPickupRequest(input: CreateRequestInput): Promise<Cr
         action: 'HELD_RESTRICTION',
         entity: 'PickupRequest',
         entityId: request.id,
-        detail: `Request for ${names} by "${requester}" matched a restriction on file. Held. Front office alerted.`,
+        detail: `${requester} asked to pick up ${names}, and that name matches a restriction on file for this family. The pickup was held and the front office was texted. No child was released.`,
       });
       // Alert admins/supervisors by text.
       const alertStaff = await tx.staffUser.findMany({
@@ -285,7 +286,7 @@ export async function createPickupRequest(input: CreateRequestInput): Promise<Cr
         action: 'HELD_UNAPPROVED',
         entity: 'PickupRequest',
         entityId: request.id,
-        detail: `"${requester}" is not on the approved list for ${household.name}. Held. Approval link sent${primary?.phone ? ` to ${primary.firstName} ${primary.lastName}` : ', no guardian phone on file'}.`,
+        detail: `${requester} is not on the approved pickup list for the ${household.name}. The pickup was held${primary?.phone ? ` and a text was sent to ${primary.firstName} ${primary.lastName} to confirm` : ', and no parent phone number was on file to ask'}. No child was released.`,
       });
       return { requestId: request.id, status: 'NEEDS_APPROVAL' as const, reason: 'UNAPPROVED_ADULT' as const };
     }
@@ -299,7 +300,7 @@ export async function createPickupRequest(input: CreateRequestInput): Promise<Cr
       action: 'PICKUP_REQUESTED',
       entity: 'PickupRequest',
       entityId: request.id,
-      detail: `${household.name}. ${names}. ${input.dismissalMethod.toLowerCase()}. Requested by ${request.requesterName} (${request.requesterKind.toLowerCase()}), via ${input.method}.`,
+      detail: `${request.requesterName}, ${requesterKindLabel(request.requesterKind)}, asked to pick up ${names} from the ${household.name} by ${dismissalLabel(input.dismissalMethod).toLowerCase()}. ${howRequested(input.method, timeLabel(new Date(), tenant.timezone))}`,
     });
 
     const byTeacher = new Map<string, { phone: string; students: string[]; room: string }>();
@@ -368,7 +369,7 @@ export async function advanceItem(
     if (!item || item.request.tenantId !== tenant.id) throw new PickupError('Pickup not found.');
     const allowed = NEXT[item.status] || [];
     if (!allowed.includes(to)) {
-      throw new PickupError(`Cannot move from ${item.status.toLowerCase()} to ${to.toLowerCase()}.`);
+      throw new PickupError(`${pickupStatusLabel(item.status)} cannot go straight to ${pickupStatusLabel(to).toLowerCase()}.`);
     }
 
     if (to === 'RELEASED') {
@@ -419,7 +420,12 @@ export async function advanceItem(
       action: to,
       entity: 'PickupRequestStudent',
       entityId: item.id,
-      detail: `${studentName} ${to === 'EN_ROUTE' ? 'is on the way to the release desk' : to === 'READY' ? 'is at the release desk' : 'request cancelled'}.`,
+      detail:
+        to === 'EN_ROUTE'
+          ? `${studentName} is on the way to the front desk.`
+          : to === 'READY'
+            ? `${studentName} is waiting at the front desk.`
+            : `The pickup request for ${studentName} was cancelled.`,
     });
 
     await settleRequestStatus(tx, item.requestId);
@@ -450,7 +456,7 @@ async function performRelease(
   if (!item || item.request.tenantId !== tenant.id) throw new PickupError('Pickup not found.');
   if (item.status === 'RELEASED') throw new PickupError('Already released.');
   if (item.status !== 'READY' && item.status !== 'EN_ROUTE') {
-    throw new PickupError(`Cannot release from ${item.status.toLowerCase()}.`);
+    throw new PickupError(`A child cannot be released from "${pickupStatusLabel(item.status).toLowerCase()}". Move them to the door first.`);
   }
 
   const date = todayInTz(tenant.timezone);
@@ -472,7 +478,7 @@ async function performRelease(
     (a) => (a.status === 'APPROVED_ONCE' || a.status === 'APPROVED_ALWAYS' || a.status === 'OVERRIDDEN') && norm(a.adultName) === norm(requester),
   );
   if (!isGuardian && !isAuthorized && !approval) {
-    throw new PickupError('This adult is no longer authorized. Route to the front office.');
+    throw new PickupError('This adult is no longer approved to collect. Send them to the front office.');
   }
 
   const restriction = await tx.pickupRestriction.findFirst({
@@ -488,7 +494,7 @@ async function performRelease(
     },
   });
   if (restriction && !overrideReason) {
-    throw new PickupError('A restriction matches this adult. Front office only.');
+    throw new PickupError('This adult matches a restriction on file. Send them to the front office.');
   }
 
   const now = new Date();
@@ -534,11 +540,11 @@ async function performRelease(
     entity: 'AttendanceRecord',
     entityId: att.id,
     detail:
-      `${studentName} released to ${requester}` +
-      (approval ? ` (parent approved ${timeLabel(approval.resolvedAt, tenant.timezone)})` : '') +
-      (overrideReason ? ` (OVERRIDE: ${overrideReason})` : '') +
-      (lateMinutes > 0 ? ` (${lateMinutes} min late, fee $${(lateFeeCents / 100).toFixed(2)})` : '') +
-      `. Requested via ${item.request.method} at ${timeLabel(item.request.requestedAt, tenant.timezone)}.`,
+      `${studentName} was released to ${requester}.` +
+      (approval ? ` A parent confirmed this by text at ${timeLabel(approval.resolvedAt, tenant.timezone)}.` : '') +
+      (overrideReason ? ` A supervisor approved the pickup for this reason: ${overrideReason}.` : '') +
+      (lateMinutes > 0 ? ` The pickup was ${lateMinutes} minutes late, so a $${(lateFeeCents / 100).toFixed(2)} fee was added.` : '') +
+      ` ${howRequested(item.request.method, timeLabel(item.request.requestedAt, tenant.timezone))}`,
   });
 
   await settleRequestStatus(tx, item.requestId);
@@ -611,7 +617,7 @@ export async function resolveApproval(
         action: 'APPROVAL_DENIED',
         entity: 'PickupApproval',
         entityId: approval.id,
-        detail: `Denied release of ${names} to ${approval.adultName}. Staff told not to release.`,
+        detail: `A parent said no to ${approval.adultName} picking up ${names}. Staff were told not to release.`,
       });
       await settleRequestStatus(tx, approval.requestId);
       return { ok: true, message: 'Denied. Staff will not release your child to this person.' };
@@ -642,7 +648,7 @@ export async function resolveApproval(
       action: 'APPROVED',
       entity: 'PickupApproval',
       entityId: approval.id,
-      detail: `Approved ${approval.adultName} for ${names}${expiresAt ? `, expires end of day` : ', permanent'}.`,
+      detail: `A parent approved ${approval.adultName} to pick up ${names}${expiresAt ? ' today only' : ", and added them to the family's approved pickup list"}.`,
     });
 
     for (const item of approval.request.students) {
@@ -717,7 +723,7 @@ export async function overrideHold(
       action: 'OVERRIDE',
       entity: 'PickupRequest',
       entityId: requestId,
-      detail: `Hold overridden for ${names}, requester ${request.requesterName}. Reason: ${reason.trim()}`,
+      detail: `A supervisor approved ${request.requesterName} to pick up ${names} despite the hold. Reason given: ${reason.trim()}`,
     });
     await settleRequestStatus(tx, requestId);
   });
@@ -750,7 +756,7 @@ export async function denyRequest(tenant: Tenant, requestId: string, actor: Staf
       action: 'DENIED',
       entity: 'PickupRequest',
       entityId: requestId,
-      detail: `Release of ${names} to ${request.requesterName} denied. ${reason || ''}`.trim(),
+      detail: `Staff refused to release ${names} to ${request.requesterName}.${reason ? ` Reason given: ${reason}` : ''}`.trim(),
     });
     // Tell the approved guardians.
     const household = request.students[0]?.student.household;
@@ -800,7 +806,7 @@ export async function reverseRelease(
       action: 'RELEASE_REVERSED',
       entity: 'AttendanceRecord',
       entityId: att.id,
-      detail: `Release of ${att.student.firstName} ${att.student.lastName} reversed (was released to ${att.releasedToName || 'unknown'}). Reason: ${reason.trim()}. The original release remains on the record.`,
+      detail: `${att.student.firstName} ${att.student.lastName} was marked as still at school. The earlier release to ${att.releasedToName || 'an unrecorded adult'} was corrected. Reason given: ${reason.trim()}. The original entry stays visible above.`,
     });
   });
 }

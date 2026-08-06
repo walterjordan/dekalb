@@ -55,3 +55,17 @@ export function endOfDayInTz(timezone: string): Date {
   const driftMin = 23 * 60 + 59 - (h * 60 + m);
   return new Date(probe.getTime() + driftMin * 60_000);
 }
+
+/**
+ * "Aug 5" in the school's own timezone.
+ *
+ * Use this instead of toISOString().slice(0,10) anywhere a date is shown next
+ * to a local time. A UTC date beside an America/New_York time disagrees with
+ * itself every evening: at 9:52 PM on the 5th, the ISO date already reads the
+ * 6th. In an audit record that is meant to settle "when was my child collected",
+ * that is not a cosmetic problem.
+ */
+export function dateLabel(d: Date | null | undefined, timezone: string): string {
+  if (!d) return '';
+  return d.toLocaleDateString('en-US', { timeZone: timezone, month: 'short', day: 'numeric' });
+}

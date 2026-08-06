@@ -46,11 +46,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: { da
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          { label: 'Checked in', value: records.filter((r) => r.status !== 'ABSENT').length },
+          { label: 'Attended', value: records.filter((r) => r.status !== 'ABSENT').length },
           { label: 'Absent', value: records.filter((r) => r.status === 'ABSENT').length },
           { label: 'Released', value: released.length },
-          { label: 'Avg wait (min)', value: avgWait },
-          { label: 'Late fees', value: `$${(lateFees / 100).toFixed(2)}` },
+          { label: 'Average wait', value: avgWait },
+          { label: 'Late fees collected', value: `$${(lateFees / 100).toFixed(2)}` },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-inkline bg-white p-3 text-center shadow-sm">
             <div className="text-2xl font-bold tabular-nums">{s.value}</div>
@@ -60,7 +60,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: { da
       </div>
       {failed > 0 && (
         <p className="mt-3 rounded-md bg-crit-bg px-4 py-2.5 text-sm font-semibold text-crit">
-          {failed} text message{failed === 1 ? '' : 's'} permanently failed to send. Those guardians may not have been notified - check the ledger.
+          {failed} text message{failed === 1 ? '' : 's'} could not be delivered. Those guardians may not have heard from us. Check the activity record.
         </p>
       )}
 
@@ -76,7 +76,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: { da
           <tbody>
             {records.map((r) => (
               <tr key={r.id} className={`border-b border-inkline last:border-b-0 ${r.status === 'ABSENT' ? 'text-neutral-400' : ''}`}>
-                <td className="px-4 py-2 font-semibold">{r.student.firstName} {r.student.lastName}{r.reversed ? ' ↩' : ''}</td>
+                <td className="px-4 py-2 font-semibold">{r.student.firstName} {r.student.lastName}{r.reversed ? ' (corrected)' : ''}</td>
                 <td className="px-4 py-2 font-mono text-xs">{r.student.grade}</td>
                 <td className="px-4 py-2 font-mono text-xs">{r.status === 'ABSENT' ? 'absent' : timeLabel(r.checkInAt, tenant.timezone)}</td>
                 <td className="px-4 py-2 font-mono text-xs">{timeLabel(r.checkOutAt, tenant.timezone) || '-'}</td>

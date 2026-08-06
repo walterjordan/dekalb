@@ -13,24 +13,20 @@ export default async function KioskPage({ params }: { params: { token: string } 
     return (
       <main className="grid min-h-screen place-items-center px-6 text-center">
         <div>
-          <h1 className="font-serif text-2xl font-semibold">Check-in is not available.</h1>
+          <h1 className="font-serif text-2xl font-semibold">Pickup is not available.</h1>
           <p className="mt-2 text-neutral-500">Please see the front desk.</p>
         </div>
       </main>
     );
   }
 
-  const date = todayInTz(tenant.timezone);
-  const presentCount = await prisma.attendanceRecord.count({
-    where: { tenantId: tenant.id, date, status: 'CHECKED_IN' },
-  });
+  // The kiosk no longer shows an attendance count. A parent standing at the
+  // front door has no reason to know how many children are in the building.
 
   return (
     <KioskClient
       token={params.token}
       tenantName={tenant.name}
-      deviceLabel={device.label}
-      presentCount={presentCount}
     />
   );
 }

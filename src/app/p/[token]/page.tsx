@@ -22,7 +22,7 @@ export default async function ParentPage({ params }: { params: { token: string }
     return (
       <main className="grid min-h-screen place-items-center px-6 text-center">
         <div>
-          <h1 className="font-serif text-2xl font-semibold">This link is not active.</h1>
+          <h1 className="font-serif text-2xl font-semibold">This pickup link is no longer active. Please see the front desk.</h1>
           <p className="mt-2 text-neutral-500">Please call the front desk for a new one.</p>
         </div>
       </main>
@@ -70,12 +70,12 @@ export default async function ParentPage({ params }: { params: { token: string }
           grade: s.grade,
           status: open
             ? open.status === 'READY'
-              ? 'READY - at the door'
+              ? 'Ready at the door'
               : open.status === 'NEEDS_APPROVAL'
-                ? 'Waiting on approval'
-                : 'Pickup in progress'
+                ? 'Waiting for a parent to confirm'
+                : 'Pickup underway'
             : !a
-              ? 'Not checked in yet'
+              ? 'Not checked in'
               : a.status === 'ABSENT'
                 ? 'Absent today'
                 : a.status === 'CHECKED_IN'

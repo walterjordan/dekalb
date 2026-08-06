@@ -41,7 +41,7 @@ export default async function StaffPage() {
           <button className="rounded-md bg-maroon px-4 py-2 text-sm font-semibold text-white">Add</button>
         </form>
         <p className="mt-2 text-xs text-neutral-400">
-          A teacher&apos;s mobile number is where pickup alerts go. That is the walkie-talkie replacement - set it.
+          A teacher&apos;s mobile number is where pickup alerts go. Pickup alerts go to that number, so please set it.
         </p>
       </section>
 
